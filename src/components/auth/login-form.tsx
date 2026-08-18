@@ -8,7 +8,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
 
   return (
     <form action={formAction} className="space-y-4">
-      <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} />
+      <input type="hidden" name="callbackUrl" value={callbackUrl ?? ""} suppressHydrationWarning />
 
       <label className="block">
         <span className="mb-1 block text-sm font-medium text-ink">Email</span>
@@ -16,6 +16,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
           type="email"
           name="email"
           required
+          suppressHydrationWarning
           className="h-14 w-full rounded-sm border border-hairline px-3 text-base text-ink focus:border-2 focus:border-ink focus:outline-none"
         />
       </label>
@@ -26,6 +27,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
           type="password"
           name="password"
           required
+          suppressHydrationWarning
           className="h-14 w-full rounded-sm border border-hairline px-3 text-base text-ink focus:border-2 focus:border-ink focus:outline-none"
         />
       </label>

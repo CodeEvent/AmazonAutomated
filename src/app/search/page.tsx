@@ -71,8 +71,39 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
       />
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
-        <aside className="space-y-6">
-          <div>
+        <aside>
+          {/* Mobile: collapsed disclosure so results don't require extra scrolling to reach */}
+          <details className="group rounded-sm border border-hairline px-4 py-3 lg:hidden">
+            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
+              <span>
+                Filters
+                {type && type in PROPERTY_TYPE_LABELS
+                  ? ` · ${PROPERTY_TYPE_LABELS[type as keyof typeof PROPERTY_TYPE_LABELS]}`
+                  : ""}
+              </span>
+              <ChevronDownIcon />
+            </summary>
+            <ul className="mt-3 space-y-2">
+              <FilterLink
+                label="All types"
+                active={!type}
+                params={params}
+                overrides={{ type: undefined }}
+              />
+              {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
+                <FilterLink
+                  key={value}
+                  label={label}
+                  active={type === value}
+                  params={params}
+                  overrides={{ type: value }}
+                />
+              ))}
+            </ul>
+          </details>
+
+          {/* Desktop: always-visible sidebar */}
+          <div className="hidden lg:block">
             <h2 className="text-base font-semibold text-ink">Property type</h2>
             <ul className="mt-3 space-y-2">
               <FilterLink
@@ -170,5 +201,22 @@ function FilterLink({
         {label}
       </a>
     </li>
+  );
+}
+
+function ChevronDownIcon() {
+  return (
+    <svg
+      viewBox="0 0 24 24"
+      aria-hidden
+      className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2.5}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="M6 9l6 6 6-6" />
+    </svg>
   );
 }

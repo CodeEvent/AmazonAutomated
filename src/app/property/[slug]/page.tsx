@@ -3,6 +3,7 @@ import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { ReservationCard } from "@/components/property/reservation-card";
+import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -31,7 +32,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 py-8 sm:px-8">
+    <div className="mx-auto max-w-[1080px] px-4 py-8 pb-24 sm:px-8 lg:pb-8">
       <h1 className="text-[22px] font-medium leading-tight text-ink">{property.name}</h1>
       <div className="mt-2 flex items-center gap-2 text-sm text-ink">
         {property.reviewCount > 0 ? (
@@ -114,7 +115,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
           </section>
         </div>
 
-        <div>
+        <div id="reserve" className="scroll-mt-24">
           <ReservationCard
             propertySlug={property.slug}
             pricePerNight={property.pricePerNight}
@@ -127,6 +128,8 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
           />
         </div>
       </div>
+
+      <MobileReserveBar pricePerNight={property.pricePerNight} />
     </div>
   );
 }
