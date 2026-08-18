@@ -3,6 +3,7 @@ import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDateShort, formatPrice } from "@/lib/format";
+import { guestsSummaryLabel } from "@/lib/guests";
 
 export default async function MyBookingsPage() {
   const session = await auth();
@@ -40,7 +41,7 @@ export default async function MyBookingsPage() {
                 <p className="text-base font-semibold text-ink">{booking.property.name}</p>
                 <p className="mt-1 text-sm text-muted">
                   {formatDateShort(booking.checkIn)} – {formatDateShort(booking.checkOut)} ·{" "}
-                  {booking.guests} guest{booking.guests === 1 ? "" : "s"}
+                  {guestsSummaryLabel(booking)}
                 </p>
                 <p className="mt-1 text-xs text-muted">Confirmation {booking.confirmationCode}</p>
               </div>

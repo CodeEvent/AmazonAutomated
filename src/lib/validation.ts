@@ -16,7 +16,10 @@ export const bookingSchema = z
     propertyId: z.string().min(1),
     checkIn: z.string().min(1, "Select a check-in date"),
     checkOut: z.string().min(1, "Select a check-out date"),
-    guests: z.coerce.number().int().min(1).max(32),
+    adults: z.coerce.number().int().min(1).max(32),
+    children: z.coerce.number().int().min(0).max(32).default(0),
+    infants: z.coerce.number().int().min(0).max(32).default(0),
+    pets: z.coerce.number().int().min(0).max(32).default(0),
   })
   .refine((data) => new Date(data.checkOut) > new Date(data.checkIn), {
     message: "Check-out must be after check-in",

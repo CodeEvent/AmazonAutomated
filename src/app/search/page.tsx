@@ -1,10 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
-import { SearchBarPill } from "@/components/search/search-bar-pill";
+import { SearchLauncher } from "@/components/search/search-launcher";
 import { PropertyCard } from "@/components/property/property-card";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { PropertyType } from "@/generated/prisma/client";
 import { Reveal } from "@/components/motion/reveal";
+import { occupancy, parseGuestsFromParams } from "@/lib/guests";
+import { availabilityWhere } from "@/lib/availability";
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -26,15 +28,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const destination = first(params.destination) ?? "";
   const checkIn = first(params.checkIn) ?? "";
   const checkOut = first(params.checkOut) ?? "";
-  const guests = Number(first(params.guests) ?? "1") || 1;
+  const guests = parseGuestsFromParams(params);
   const type = first(params.type);
   const minPrice = Number(first(params.minPrice) ?? "") || undefined;
   const maxPrice = Number(first(params.maxPrice) ?? "") || undefined;
   const sortKey = (first(params.sort) as keyof typeof SORT_OPTIONS) ?? "recommended";
   const sort = SORT_OPTIONS[sortKey] ?? SORT_OPTIONS.recommended;
 
+  const checkInDate = checkIn ? new Date(checkIn) : undefined;
+  const checkOutDate = checkOut ? new Date(checkOut) : undefined;
+
   const where: Prisma.PropertyWhereInput = {
-    maxGuests: { gte: guests },
+    maxGuests: { gte: occupancy(guests) },
+    ...availabilityWhere(checkInDate, checkOutDate),
   };
 
   if (destination) {
@@ -63,11 +69,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
-      <SearchBarPill
+      <SearchLauncher
         defaultDestination={destination}
         defaultCheckIn={checkIn}
         defaultCheckOut={checkOut}
-        defaultGuests={guests}
+        searchParams={params}
       />
 
       <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">

@@ -59,9 +59,9 @@ export function SiteHeader({ user }: { user: HeaderUser }) {
               >
                 My bookings
               </Link>
-              <span className="hidden text-sm text-muted sm:block">
+              <Link href="/account" className="hidden text-sm text-muted hover:text-ink sm:block">
                 {user.name ?? user.email}
-              </span>
+              </Link>
               <LogoutButton />
             </>
           ) : (

@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { formatDateShort, formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { SuccessCheck } from "@/components/motion/success-check";
+import { guestsSummaryLabel } from "@/lib/guests";
 
 export default async function BookingConfirmationPage({
   params,
@@ -47,7 +48,7 @@ export default async function BookingConfirmationPage({
         </div>
         <div className="mt-2 flex justify-between text-sm text-ink">
           <span>Guests</span>
-          <span>{booking.guests}</span>
+          <span>{guestsSummaryLabel(booking)}</span>
         </div>
         <div className="mt-4 flex justify-between border-t border-hairline-soft pt-4 text-base font-semibold text-ink">
           <span>Total paid</span>

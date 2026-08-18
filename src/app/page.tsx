@@ -1,8 +1,9 @@
 import { prisma } from "@/lib/prisma";
-import { SearchBarPill } from "@/components/search/search-bar-pill";
+import { SearchLauncher } from "@/components/search/search-launcher";
 import { PropertyCard } from "@/components/property/property-card";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { Reveal } from "@/components/motion/reveal";
+import { getTrendingDestinations } from "@/lib/trending-destinations";
 
 export const dynamic = "force-dynamic";
 
@@ -12,12 +13,7 @@ export default async function HomePage() {
     take: 12,
   });
 
-  const cities = await prisma.property.groupBy({
-    by: ["city", "country"],
-    _count: { _all: true },
-    orderBy: { _count: { city: "desc" } },
-    take: 6,
-  });
+  const cities = await getTrendingDestinations(6);
 
   return (
     <div>
@@ -32,7 +28,7 @@ export default async function HomePage() {
             </p>
           </Reveal>
           <Reveal delay={0.1} className="mt-8">
-            <SearchBarPill />
+            <SearchLauncher />
           </Reveal>
         </div>
       </section>
@@ -48,7 +44,7 @@ export default async function HomePage() {
             >
               <h3 className="text-base font-semibold text-ink">{entry.city}</h3>
               <p className="text-sm text-muted">
-                {entry._count._all} stay{entry._count._all === 1 ? "" : "s"}
+                {entry.count} stay{entry.count === 1 ? "" : "s"}
               </p>
             </a>
           ))}

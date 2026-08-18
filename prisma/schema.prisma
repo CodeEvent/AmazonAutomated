@@ -119,7 +119,10 @@ model Booking {
   propertyId  String
   checkIn     DateTime
   checkOut    DateTime
-  guests      Int
+  adults      Int           @default(1)
+  children    Int           @default(0)
+  infants     Int           @default(0)
+  pets        Int           @default(0)
   nights      Int
   nightlyRate Int // cents, snapshot at time of booking
   cleaningFee Int // cents

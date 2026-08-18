@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { ReservationCard } from "@/components/property/reservation-card";
 import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
+import { getBlockedRanges } from "@/lib/availability";
+import { parseGuestsFromParams } from "@/lib/guests";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -28,6 +30,9 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   if (!property) {
     notFound();
   }
+
+  const blockedRanges = await getBlockedRanges(property.id);
+  const guests = parseGuestsFromParams(query);
 
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -122,9 +127,11 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
             maxGuests={property.maxGuests}
             defaultCheckIn={first(query.checkIn)}
             defaultCheckOut={first(query.checkOut)}
-            defaultGuests={Number(first(query.guests) ?? "1") || 1}
+            defaultGuests={guests}
+            blockedRanges={blockedRanges}
             ratingAverage={property.ratingAverage}
             reviewCount={property.reviewCount}
+            unavailable={first(query.unavailable) === "1"}
           />
         </div>
       </div>
