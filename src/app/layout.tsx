@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { MotionConfig } from "motion/react";
 import "./globals.css";
 import { SiteHeader } from "@/components/layout/site-header";
 import { SiteFooter } from "@/components/layout/site-footer";
@@ -24,9 +25,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col bg-canvas text-ink">
-        <SiteHeader user={session?.user ?? null} />
-        <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <MotionConfig reducedMotion="user">
+          <SiteHeader user={session?.user ?? null} />
+          <main className="flex-1">{children}</main>
+          <SiteFooter />
+        </MotionConfig>
       </body>
     </html>
   );

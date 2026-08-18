@@ -35,7 +35,7 @@ export function LoginForm({ callbackUrl }: { callbackUrl?: string }) {
       <button
         type="submit"
         disabled={pending}
-        className="h-12 w-full rounded-sm bg-primary text-base font-medium text-on-primary hover:bg-primary-active disabled:opacity-60"
+        className="h-12 w-full rounded-sm bg-primary text-base font-medium text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98] disabled:opacity-60"
       >
         {pending ? "Logging in..." : "Log in"}
       </button>

@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { formatDateShort, formatPrice } from "@/lib/format";
 import { Button } from "@/components/ui/button";
+import { SuccessCheck } from "@/components/motion/success-check";
 
 export default async function BookingConfirmationPage({
   params,
@@ -27,9 +28,7 @@ export default async function BookingConfirmationPage({
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-16 text-center sm:px-8">
-      <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-primary text-on-primary">
-        <CheckIcon />
-      </div>
+      <SuccessCheck />
       <h1 className="mt-6 text-[22px] font-medium text-ink">Booking confirmed</h1>
       <p className="mt-2 text-base text-muted">
         Confirmation code <span className="font-semibold text-ink">{booking.confirmationCode}</span>
@@ -72,13 +71,5 @@ export default async function BookingConfirmationPage({
         — this is a demo checkout, no real payment was processed.
       </p>
     </div>
-  );
-}
-
-function CheckIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-7 w-7" fill="none" stroke="currentColor" strokeWidth={3}>
-      <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
   );
 }

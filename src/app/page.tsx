@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { SearchBarPill } from "@/components/search/search-bar-pill";
 import { PropertyCard } from "@/components/property/property-card";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
+import { Reveal } from "@/components/motion/reveal";
 
 export const dynamic = "force-dynamic";
 
@@ -22,15 +23,17 @@ export default async function HomePage() {
     <div>
       <section className="border-b border-hairline-soft bg-surface-soft/40 px-4 py-16 sm:px-8">
         <div className="mx-auto max-w-[1440px]">
-          <h1 className="text-center text-[28px] font-bold leading-tight text-ink">
-            Find your next stay
-          </h1>
-          <p className="mt-2 text-center text-base text-muted">
-            Search low prices on hotels, homes, and much more...
-          </p>
-          <div className="mt-8">
+          <Reveal y={12}>
+            <h1 className="text-center text-[28px] font-bold leading-tight text-ink">
+              Find your next stay
+            </h1>
+            <p className="mt-2 text-center text-base text-muted">
+              Search low prices on hotels, homes, and much more...
+            </p>
+          </Reveal>
+          <Reveal delay={0.1} className="mt-8">
             <SearchBarPill />
-          </div>
+          </Reveal>
         </div>
       </section>
 
@@ -69,8 +72,10 @@ export default async function HomePage() {
       <section className="mx-auto max-w-[1440px] px-4 pb-16 sm:px-8">
         <h2 className="text-xl font-semibold text-ink">Popular stays right now</h2>
         <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-          {properties.map((property) => (
-            <PropertyCard key={property.id} property={property} />
+          {properties.map((property, index) => (
+            <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
+              <PropertyCard property={property} />
+            </Reveal>
           ))}
         </div>
       </section>

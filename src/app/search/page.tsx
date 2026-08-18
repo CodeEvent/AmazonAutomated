@@ -4,6 +4,7 @@ import { SearchBarPill } from "@/components/search/search-bar-pill";
 import { PropertyCard } from "@/components/property/property-card";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { PropertyType } from "@/generated/prisma/client";
+import { Reveal } from "@/components/motion/reveal";
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -130,8 +131,10 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             </p>
           ) : (
             <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
-              {properties.map((property) => (
-                <PropertyCard key={property.id} property={property} />
+              {properties.map((property, index) => (
+                <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
+                  <PropertyCard property={property} />
+                </Reveal>
               ))}
             </div>
           )}

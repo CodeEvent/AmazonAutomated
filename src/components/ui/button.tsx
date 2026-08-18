@@ -34,7 +34,7 @@ type ButtonAsLink = CommonProps &
 export function Button(props: ButtonAsButton | ButtonAsLink) {
   const { variant = "primary", size = "md", className, ...rest } = props;
   const classes = clsx(
-    "inline-flex items-center justify-center gap-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed",
+    "inline-flex items-center justify-center gap-2 transition-[color,background-color,transform] duration-150 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed",
     variant !== "tertiary" && SIZE_CLASSES[size],
     VARIANT_CLASSES[variant],
     className,

@@ -69,7 +69,7 @@ export function ReservationCard({
 
         <button
           type="submit"
-          className="mt-4 w-full rounded-sm bg-primary py-3 text-base font-medium text-on-primary hover:bg-primary-active"
+          className="mt-4 w-full rounded-sm bg-primary py-3 text-base font-medium text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98]"
         >
           Reserve
         </button>

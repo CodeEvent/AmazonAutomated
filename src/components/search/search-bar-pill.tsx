@@ -1,3 +1,5 @@
+import { MagneticButton } from "@/components/motion/magnetic-button";
+
 export function SearchBarPill({
   defaultDestination,
   defaultCheckIn,
@@ -58,13 +60,15 @@ export function SearchBarPill({
             className="w-full bg-transparent text-sm text-ink focus:outline-none"
           />
         </span>
-        <button
+        <MagneticButton
           type="submit"
           aria-label="Search"
+          range={40}
+          strength={0.3}
           className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary hover:bg-primary-active"
         >
           <SearchIcon />
-        </button>
+        </MagneticButton>
       </label>
     </form>
   );

@@ -88,7 +88,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
             <input type="hidden" name="guests" value={parsed.data.guests} />
             <button
               type="submit"
-              className="w-full rounded-sm bg-primary py-3 text-base font-medium text-on-primary hover:bg-primary-active"
+              className="w-full rounded-sm bg-primary py-3 text-base font-medium text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98]"
             >
               Confirm and book
             </button>
