@@ -7,6 +7,9 @@ import { prisma } from "@/lib/prisma";
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  // Vercel preview/production URLs aren't known ahead of time, so trust the
+  // request host instead of requiring a hardcoded AUTH_URL.
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
