@@ -13,12 +13,22 @@ export type PropertyCardData = {
   images: string[];
 };
 
-export function PropertyCard({ property }: { property: PropertyCardData }) {
+export function PropertyCard({
+  property,
+  searchQuery,
+}: {
+  property: PropertyCardData;
+  /** Query string (no leading "?") carrying the current search's dates/guests into the listing page. */
+  searchQuery?: string;
+}) {
   const isGuestFavorite = property.reviewCount > 10 && property.ratingAverage >= 4.7;
+  const href = searchQuery
+    ? `/property/${property.slug}?${searchQuery}`
+    : `/property/${property.slug}`;
 
   return (
     <Link
-      href={`/property/${property.slug}`}
+      href={href}
       className="group block transition-transform duration-200 ease-out hover:-translate-y-0.5"
     >
       <PropertyCardGallery

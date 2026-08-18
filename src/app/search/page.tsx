@@ -5,7 +5,7 @@ import { PropertyCard } from "@/components/property/property-card";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { PropertyType } from "@/generated/prisma/client";
 import { Reveal } from "@/components/motion/reveal";
-import { occupancy, parseGuestsFromParams } from "@/lib/guests";
+import { guestsToSearchParams, occupancy, parseGuestsFromParams } from "@/lib/guests";
 import { availabilityWhere } from "@/lib/availability";
 
 type SearchPageProps = {
@@ -37,6 +37,11 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const checkInDate = checkIn ? new Date(checkIn) : undefined;
   const checkOutDate = checkOut ? new Date(checkOut) : undefined;
+
+  const propertyLinkParams = new URLSearchParams(guestsToSearchParams(guests));
+  if (checkIn) propertyLinkParams.set("checkIn", checkIn);
+  if (checkOut) propertyLinkParams.set("checkOut", checkOut);
+  const propertyLinkQuery = propertyLinkParams.toString();
 
   const where: Prisma.PropertyWhereInput = {
     maxGuests: { gte: occupancy(guests) },
@@ -170,7 +175,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
               {properties.map((property, index) => (
                 <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
-                  <PropertyCard property={property} />
+                  <PropertyCard property={property} searchQuery={propertyLinkQuery} />
                 </Reveal>
               ))}
             </div>
