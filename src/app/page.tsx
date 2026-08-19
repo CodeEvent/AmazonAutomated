@@ -1,19 +1,33 @@
 import { prisma } from "@/lib/prisma";
 import { SearchLauncher } from "@/components/search/search-launcher";
 import { PropertyCard } from "@/components/property/property-card";
+import { PropertyRail } from "@/components/home/property-rail";
+import { DestinationTiles } from "@/components/home/destination-tiles";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { Reveal } from "@/components/motion/reveal";
-import { getTrendingDestinations } from "@/lib/trending-destinations";
+import { getDestinationTiles } from "@/lib/trending-destinations";
+import { getHomepageRails } from "@/lib/homepage-sections";
 
 export const dynamic = "force-dynamic";
 
 export default async function HomePage() {
-  const properties = await prisma.property.findMany({
-    orderBy: { ratingAverage: "desc" },
-    take: 12,
-  });
+  const [destinations, rails] = await Promise.all([
+    getDestinationTiles(8),
+    getHomepageRails(),
+  ]);
 
-  const cities = await getTrendingDestinations(6);
+  const railPropertyIds = new Set(rails.flatMap((rail) => rail.properties.map((p) => p.id)));
+
+  // Fallback grid: only used when there isn't enough data to fill rails, or to
+  // surface properties that didn't make it into any rail.
+  const fallbackProperties =
+    rails.length === 0
+      ? await prisma.property.findMany({ orderBy: { ratingAverage: "desc" }, take: 12 })
+      : await prisma.property.findMany({
+          where: { id: { notIn: Array.from(railPropertyIds) } },
+          orderBy: { ratingAverage: "desc" },
+          take: 12,
+        });
 
   return (
     <div>
@@ -34,21 +48,7 @@ export default async function HomePage() {
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 py-12 sm:px-8">
-        <h2 className="text-xl font-semibold text-ink">Trending destinations</h2>
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-          {cities.map((entry) => (
-            <a
-              key={`${entry.city}-${entry.country}`}
-              href={`/search?destination=${encodeURIComponent(entry.city)}`}
-              className="block"
-            >
-              <h3 className="text-base font-semibold text-ink">{entry.city}</h3>
-              <p className="text-sm text-muted">
-                {entry.count} stay{entry.count === 1 ? "" : "s"}
-              </p>
-            </a>
-          ))}
-        </div>
+        <DestinationTiles destinations={destinations} />
       </section>
 
       <section className="mx-auto max-w-[1440px] px-4 pb-8 sm:px-8">
@@ -65,16 +65,26 @@ export default async function HomePage() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-[1440px] px-4 pb-16 sm:px-8">
-        <h2 className="text-xl font-semibold text-ink">Popular stays right now</h2>
-        <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
-          {properties.map((property, index) => (
-            <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
-              <PropertyCard property={property} />
-            </Reveal>
-          ))}
-        </div>
-      </section>
+      {rails.map((rail) => (
+        <section key={rail.key} className="mx-auto max-w-[1440px] px-4 pb-12 sm:px-8">
+          <PropertyRail rail={rail} />
+        </section>
+      ))}
+
+      {fallbackProperties.length > 0 ? (
+        <section className="mx-auto max-w-[1440px] px-4 pb-16 sm:px-8">
+          <h2 className="text-xl font-semibold text-ink">
+            {rails.length === 0 ? "Popular stays right now" : "More places to explore"}
+          </h2>
+          <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
+            {fallbackProperties.map((property, index) => (
+              <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
+                <PropertyCard property={property} />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </div>
   );
 }
