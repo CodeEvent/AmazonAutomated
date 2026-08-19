@@ -1,11 +1,11 @@
 import { notFound } from "next/navigation";
-import Image from "next/image";
 import { prisma } from "@/lib/prisma";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { ReservationCard } from "@/components/property/reservation-card";
 import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
 import { getBlockedRanges } from "@/lib/availability";
 import { parseGuestsFromParams } from "@/lib/guests";
+import { PhotoGrid } from "@/components/property/photo-grid";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -52,20 +52,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         </span>
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-2 overflow-hidden rounded-md sm:grid-cols-2">
-        {property.images.slice(0, 2).map((src, index) => (
-          <div key={src} className="relative aspect-[4/3] bg-surface-soft">
-            <Image
-              src={src}
-              alt={`${property.name} photo ${index + 1}`}
-              fill
-              sizes="(min-width: 640px) 50vw, 100vw"
-              className="object-cover"
-              priority={index === 0}
-            />
-          </div>
-        ))}
-      </div>
+      <PhotoGrid images={property.images} alt={property.name} />
 
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
         <div>

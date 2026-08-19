@@ -81,112 +81,74 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         searchParams={params}
       />
 
-      <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-[260px_1fr]">
-        <aside>
-          {/* Mobile: collapsed disclosure so results don't require extra scrolling to reach */}
-          <details className="group rounded-sm border border-hairline px-4 py-3 lg:hidden">
-            <summary className="flex cursor-pointer list-none items-center justify-between text-sm font-semibold text-ink [&::-webkit-details-marker]:hidden">
-              <span>
-                Filters
-                {type && type in PROPERTY_TYPE_LABELS
-                  ? ` · ${PROPERTY_TYPE_LABELS[type as keyof typeof PROPERTY_TYPE_LABELS]}`
-                  : ""}
-              </span>
-              <ChevronDownIcon />
-            </summary>
-            <ul className="mt-3 space-y-2">
-              <FilterLink
-                label="All types"
-                active={!type}
-                params={params}
-                overrides={{ type: undefined }}
-              />
-              {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
-                <FilterLink
-                  key={value}
-                  label={label}
-                  active={type === value}
-                  params={params}
-                  overrides={{ type: value }}
-                />
-              ))}
-            </ul>
-          </details>
-
-          {/* Desktop: always-visible sidebar */}
-          <div className="hidden lg:block">
-            <h2 className="text-base font-semibold text-ink">Property type</h2>
-            <ul className="mt-3 space-y-2">
-              <FilterLink
-                label="All types"
-                active={!type}
-                params={params}
-                overrides={{ type: undefined }}
-              />
-              {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
-                <FilterLink
-                  key={value}
-                  label={label}
-                  active={type === value}
-                  params={params}
-                  overrides={{ type: value }}
-                />
-              ))}
-            </ul>
-          </div>
-        </aside>
-
-        <section>
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-muted">
-              {properties.length} stay{properties.length === 1 ? "" : "s"}
-              {destination ? ` in ${destination}` : ""}
-            </p>
-
-            <form action="/search" method="get" className="flex items-center gap-2">
-              {Object.entries(params).map(([key, value]) =>
-                key === "sort" || value === undefined ? null : (
-                  <input key={key} type="hidden" name={key} value={first(value)} />
-                ),
-              )}
-              <label className="text-sm text-muted" htmlFor="sort">
-                Sort by
-              </label>
-              <select
-                id="sort"
-                name="sort"
-                defaultValue={sortKey}
-                className="rounded-sm border border-hairline px-3 py-2 text-sm text-ink"
-              >
-                {Object.entries(SORT_OPTIONS).map(([key, option]) => (
-                  <option key={key} value={key}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </form>
-          </div>
-
-          {properties.length === 0 ? (
-            <p className="mt-12 text-center text-muted">
-              No stays match your search. Try different dates or a broader destination.
-            </p>
-          ) : (
-            <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
-              {properties.map((property, index) => (
-                <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
-                  <PropertyCard property={property} searchQuery={propertyLinkQuery} />
-                </Reveal>
-              ))}
-            </div>
-          )}
-        </section>
+      {/* Horizontal pill filter bar, matching airbnb.com's search results header
+          (a left filter sidebar reads more like booking.com than Airbnb). */}
+      <div className="mt-6 -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        <FilterPill
+          label="All types"
+          active={!type}
+          params={params}
+          overrides={{ type: undefined }}
+        />
+        {Object.entries(PROPERTY_TYPE_LABELS).map(([value, label]) => (
+          <FilterPill
+            key={value}
+            label={label}
+            active={type === value}
+            params={params}
+            overrides={{ type: value }}
+          />
+        ))}
       </div>
+
+      <div className="mt-6 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-muted">
+          {properties.length} stay{properties.length === 1 ? "" : "s"}
+          {destination ? ` in ${destination}` : ""}
+        </p>
+
+        <form action="/search" method="get" className="flex items-center gap-2">
+          {Object.entries(params).map(([key, value]) =>
+            key === "sort" || value === undefined ? null : (
+              <input key={key} type="hidden" name={key} value={first(value)} />
+            ),
+          )}
+          <label className="text-sm text-muted" htmlFor="sort">
+            Sort by
+          </label>
+          <select
+            id="sort"
+            name="sort"
+            defaultValue={sortKey}
+            className="rounded-sm border border-hairline px-3 py-2 text-sm text-ink"
+          >
+            {Object.entries(SORT_OPTIONS).map(([key, option]) => (
+              <option key={key} value={key}>
+                {option.label}
+              </option>
+            ))}
+          </select>
+        </form>
+      </div>
+
+      {properties.length === 0 ? (
+        <p className="mt-12 text-center text-muted">
+          No stays match your search. Try different dates or a broader destination.
+        </p>
+      ) : (
+        <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {properties.map((property, index) => (
+            <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
+              <PropertyCard property={property} searchQuery={propertyLinkQuery} />
+            </Reveal>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function FilterLink({
+function FilterPill({
   label,
   active,
   params,
@@ -204,30 +166,15 @@ function FilterLink({
   }
 
   return (
-    <li>
-      <a
-        href={`/search?${next.toString()}`}
-        className={active ? "text-sm font-semibold text-ink" : "text-sm text-muted hover:text-ink"}
-      >
-        {label}
-      </a>
-    </li>
-  );
-}
-
-function ChevronDownIcon() {
-  return (
-    <svg
-      viewBox="0 0 24 24"
-      aria-hidden
-      className="h-4 w-4 shrink-0 text-muted transition-transform group-open:rotate-180"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2.5}
-      strokeLinecap="round"
-      strokeLinejoin="round"
+    <a
+      href={`/search?${next.toString()}`}
+      className={`shrink-0 rounded-full border px-4 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "border-ink bg-ink text-canvas"
+          : "border-hairline text-ink hover:border-ink"
+      }`}
     >
-      <path d="M6 9l6 6 6-6" />
-    </svg>
+      {label}
+    </a>
   );
 }
