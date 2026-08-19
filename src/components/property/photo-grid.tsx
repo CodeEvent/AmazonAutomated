@@ -23,7 +23,13 @@ export function PhotoGrid({ images, alt }: { images: string[]; alt: string }) {
 
   return (
     <>
-      <div className="relative mt-6 overflow-hidden rounded-xl">
+      {/* Mobile: full-bleed swipeable carousel, matching the real app's hero. */}
+      <div className="-mx-4 mt-4 sm:hidden">
+        <MobileCarousel images={images} alt={alt} onShowAll={() => setOpen(true)} />
+      </div>
+
+      {/* Desktop: bento photo grid with a "Show all photos" overlay button. */}
+      <div className="relative mt-6 hidden overflow-hidden rounded-xl sm:block">
         <Layout images={images} alt={alt} />
 
         {images.length > 1 ? (
@@ -40,6 +46,56 @@ export function PhotoGrid({ images, alt }: { images: string[]; alt: string }) {
 
       {open ? <Lightbox images={images} alt={alt} onClose={() => setOpen(false)} /> : null}
     </>
+  );
+}
+
+function MobileCarousel({
+  images,
+  alt,
+  onShowAll,
+}: {
+  images: string[];
+  alt: string;
+  onShowAll: () => void;
+}) {
+  const [index, setIndex] = useState(0);
+
+  const onScroll = (event: React.UIEvent<HTMLDivElement>) => {
+    const track = event.currentTarget;
+    const next = Math.round(track.scrollLeft / track.clientWidth);
+    if (next !== index) setIndex(next);
+  };
+
+  return (
+    <div className="relative">
+      <div
+        onScroll={onScroll}
+        className="flex snap-x snap-mandatory overflow-x-auto [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {images.map((src, i) => (
+          <div key={src} className="relative aspect-[4/3] w-full shrink-0 snap-start bg-surface-soft">
+            <Image
+              src={src}
+              alt={`${alt} photo ${i + 1}`}
+              fill
+              sizes="100vw"
+              className="object-cover"
+              priority={i === 0}
+            />
+          </div>
+        ))}
+      </div>
+
+      {images.length > 1 ? (
+        <button
+          type="button"
+          onClick={onShowAll}
+          className="absolute bottom-3 right-3 rounded-full bg-ink/70 px-2.5 py-1 text-xs font-medium text-canvas"
+        >
+          {index + 1} / {images.length}
+        </button>
+      ) : null}
+    </div>
   );
 }
 

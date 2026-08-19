@@ -6,6 +6,10 @@ import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
 import { getBlockedRanges } from "@/lib/availability";
 import { parseGuestsFromParams } from "@/lib/guests";
 import { PhotoGrid } from "@/components/property/photo-grid";
+import { HostCard } from "@/components/property/host-card";
+import { AmenitiesSection } from "@/components/property/amenities-section";
+import { ReviewsSection } from "@/components/property/reviews-section";
+import { isRareFind } from "@/lib/badges";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -19,9 +23,10 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   const property = await prisma.property.findUnique({
     where: { slug },
     include: {
+      host: true,
       reviews: {
         orderBy: { createdAt: "desc" },
-        take: 6,
+        take: 50,
         include: { user: { select: { name: true } } },
       },
     },
@@ -33,13 +38,17 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
 
   const blockedRanges = await getBlockedRanges(property.id);
   const guests = parseGuestsFromParams(query);
+  const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
 
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
   return (
     <div className="mx-auto max-w-[1080px] px-4 py-8 pb-24 sm:px-8 lg:pb-8">
       <h1 className="text-[22px] font-medium leading-tight text-ink">{property.name}</h1>
-      <div className="mt-2 flex items-center gap-2 text-sm text-ink">
+      <p className="mt-1 text-sm text-muted">
+        Entire {PROPERTY_TYPE_LABELS[property.type].toLowerCase()} in {property.city}, {property.country}
+      </p>
+      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-ink">
         {property.reviewCount > 0 ? (
           <span className="flex items-center gap-1 font-medium">
             <StarIcon /> {property.ratingAverage.toFixed(2)} · {property.reviewCount} reviews
@@ -47,64 +56,49 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         ) : (
           <span className="text-muted">New listing</span>
         )}
-        <span className="text-muted">
-          · {property.city}, {property.country}
-        </span>
+        {rareFind ? (
+          <span className="flex items-center gap-1 font-medium text-brand">💎 Rare find</span>
+        ) : null}
       </div>
 
       <PhotoGrid images={property.images} alt={property.name} />
 
+      <div className="mt-6 flex items-center gap-3 border-b border-hairline-soft pb-8">
+        <div className="flex h-12 w-12 items-center justify-center overflow-hidden rounded-full bg-ink text-base font-semibold text-canvas">
+          {property.host.image ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={property.host.image} alt={property.host.name} className="h-full w-full object-cover" />
+          ) : (
+            property.host.name.trim().charAt(0).toUpperCase()
+          )}
+        </div>
+        <div>
+          <p className="text-base font-semibold text-ink">Hosted by {property.host.name}</p>
+          <p className="text-sm text-muted">
+            {property.host.isSuperhost ? "Superhost · " : ""}
+            {property.maxGuests} guests · {property.bedrooms} bedrooms · {property.beds} beds ·{" "}
+            {property.bathrooms} baths
+          </p>
+        </div>
+      </div>
+
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
         <div>
-          <section className="border-b border-hairline-soft pb-8">
-            <p className="text-base font-semibold text-ink">
-              {PROPERTY_TYPE_LABELS[property.type]} hosted by {property.hostName}
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              {property.maxGuests} guests · {property.bedrooms} bedrooms · {property.beds} beds ·{" "}
-              {property.bathrooms} baths
-            </p>
-          </section>
-
           <section className="border-b border-hairline-soft py-8">
             <p className="whitespace-pre-line text-base leading-relaxed text-body">
               {property.description}
             </p>
           </section>
 
-          <section className="border-b border-hairline-soft py-8">
-            <h2 className="text-xl font-bold text-ink">What this place offers</h2>
-            <ul className="mt-4 grid grid-cols-1 gap-y-3 sm:grid-cols-2">
-              {property.amenities.map((amenity) => (
-                <li key={amenity} className="border-b border-hairline-soft py-3 text-base text-ink">
-                  {amenity}
-                </li>
-              ))}
-            </ul>
-          </section>
+          <AmenitiesSection amenities={property.amenities} unavailableAmenities={property.unavailableAmenities} />
 
-          <section className="py-8">
-            <h2 className="text-xl font-bold text-ink">Reviews</h2>
-            {property.reviews.length === 0 ? (
-              <p className="mt-4 text-sm text-muted">No reviews yet.</p>
-            ) : (
-              <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
-                {property.reviews.map((review) => (
-                  <div key={review.id}>
-                    <p className="text-sm font-semibold text-ink">
-                      {review.user.name ?? "Guest"}
-                    </p>
-                    <p className="mt-1 text-sm text-muted">
-                      {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(
-                        review.createdAt,
-                      )}
-                    </p>
-                    <p className="mt-2 text-sm text-body">{review.comment}</p>
-                  </div>
-                ))}
-              </div>
-            )}
-          </section>
+          <HostCard host={property.host} />
+
+          <ReviewsSection
+            reviews={property.reviews}
+            ratingAverage={property.ratingAverage}
+            reviewCount={property.reviewCount}
+          />
         </div>
 
         <div id="reserve" className="scroll-mt-24">

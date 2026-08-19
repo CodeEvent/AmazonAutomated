@@ -8,6 +8,152 @@ const prisma = new PrismaClient({ adapter });
 
 const IMG = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
 
+const hosts: Array<{
+  slug: string;
+  name: string;
+  image?: string;
+  bio: string;
+  education?: string;
+  work?: string;
+  isSuperhost: boolean;
+  yearsHosting: number;
+  responseRatePercent: number;
+  ratingAverage: number;
+  reviewCount: number;
+}> = [
+  {
+    slug: "mariana",
+    name: "Mariana",
+    bio: "Born and raised in Alfama. I restored this loft myself and love pointing guests toward the miradouros only locals know about.",
+    education: "University of Lisbon",
+    work: "Interior designer",
+    isSuperhost: true,
+    yearsHosting: 6,
+    responseRatePercent: 99,
+    ratingAverage: 4.86,
+    reviewCount: 214,
+  },
+  {
+    slug: "hotel-ribeira",
+    name: "Hotel Ribeira",
+    bio: "A family-run boutique hotel on Praça do Comércio, three generations in the hospitality business.",
+    isSuperhost: true,
+    yearsHosting: 9,
+    responseRatePercent: 97,
+    ratingAverage: 4.72,
+    reviewCount: 98,
+  },
+  {
+    slug: "takeshi",
+    name: "Takeshi",
+    bio: "I grew up two streets over from this machiya and spent five years restoring it board by board. Happy to share the best quiet corners of Higashiyama.",
+    education: "Kyoto Institute of Technology",
+    work: "Woodworker",
+    isSuperhost: true,
+    yearsHosting: 8,
+    responseRatePercent: 100,
+    ratingAverage: 4.94,
+    reviewCount: 176,
+  },
+  {
+    slug: "elena",
+    name: "Elena",
+    bio: "Third-generation Santorini local. My family has owned this cliffside plot since the 1960s.",
+    work: "Architect",
+    isSuperhost: true,
+    yearsHosting: 11,
+    responseRatePercent: 98,
+    ratingAverage: 4.97,
+    reviewCount: 312,
+  },
+  {
+    slug: "connor",
+    name: "Connor",
+    bio: "Mountain guide turned host. I still lead trail runs most mornings if guests want company.",
+    work: "Mountain guide",
+    isSuperhost: true,
+    yearsHosting: 5,
+    responseRatePercent: 96,
+    ratingAverage: 4.89,
+    reviewCount: 143,
+  },
+  {
+    slug: "youssef",
+    name: "Youssef",
+    bio: "As citizens of Marrakech we'd be more than happy to point you toward the best souks, hammams, and rooftop views the medina has to offer.",
+    work: "Textile trader",
+    isSuperhost: true,
+    yearsHosting: 7,
+    responseRatePercent: 99,
+    ratingAverage: 4.91,
+    reviewCount: 261,
+  },
+  {
+    slug: "chris",
+    name: "Chris",
+    bio: "Midtown native, happy to help with restaurant reservations and Broadway tickets.",
+    work: "Product manager",
+    isSuperhost: false,
+    yearsHosting: 3,
+    responseRatePercent: 92,
+    ratingAverage: 4.68,
+    reviewCount: 87,
+  },
+  {
+    slug: "wayan",
+    name: "Wayan",
+    bio: "Our family has farmed these rice terraces for generations. The resort was built to share that view with travelers.",
+    work: "Resort manager",
+    isSuperhost: true,
+    yearsHosting: 10,
+    responseRatePercent: 99,
+    ratingAverage: 4.95,
+    reviewCount: 402,
+  },
+  {
+    slug: "casa-gotic",
+    name: "Casa Gòtic",
+    bio: "A small team running one lively hostel in the Gothic Quarter since 2014.",
+    isSuperhost: false,
+    yearsHosting: 12,
+    responseRatePercent: 90,
+    ratingAverage: 4.51,
+    reviewCount: 519,
+  },
+  {
+    slug: "isla",
+    name: "Isla",
+    bio: "I split my time between guiding on Lake Wakatipu and hosting travelers in the cabin next door.",
+    work: "Kayak guide",
+    isSuperhost: true,
+    yearsHosting: 4,
+    responseRatePercent: 98,
+    ratingAverage: 4.9,
+    reviewCount: 121,
+  },
+  {
+    slug: "marina-resorts-group",
+    name: "Marina Resorts Group",
+    bio: "We operate a small collection of waterfront properties along Dubai Marina.",
+    isSuperhost: true,
+    yearsHosting: 8,
+    responseRatePercent: 95,
+    ratingAverage: 4.8,
+    reviewCount: 156,
+  },
+  {
+    slug: "giulia",
+    name: "Giulia",
+    bio: "My grandparents planted the lemon grove this villa sits in. I still press the oil we leave guests each stay.",
+    work: "Farmer",
+    isSuperhost: true,
+    yearsHosting: 9,
+    responseRatePercent: 100,
+    ratingAverage: 4.93,
+    reviewCount: 189,
+  },
+];
+
 const properties: Array<{
   slug: string;
   name: string;
@@ -24,10 +170,11 @@ const properties: Array<{
   beds: number;
   bathrooms: number;
   amenities: string[];
+  unavailableAmenities: string[];
   images: string[];
   ratingAverage: number;
   reviewCount: number;
-  hostName: string;
+  hostSlug: string;
 }> = [
   {
     slug: "sunset-loft-lisbon",
@@ -46,10 +193,11 @@ const properties: Array<{
     beds: 2,
     bathrooms: 1,
     amenities: ["Wifi", "Kitchen", "Washer", "Air conditioning", "Balcony", "Self check-in"],
+    unavailableAmenities: ["Elevator", "Pool"],
     images: [IMG("photo-1502672260266-1c1ef2d93688"), IMG("photo-1502672023488-70e25813eb80")],
     ratingAverage: 4.86,
     reviewCount: 214,
-    hostName: "Mariana",
+    hostSlug: "mariana",
   },
   {
     slug: "harborview-suite-lisbon",
@@ -68,10 +216,11 @@ const properties: Array<{
     beds: 1,
     bathrooms: 1,
     amenities: ["Wifi", "Pool", "Breakfast included", "Air conditioning", "Room service"],
+    unavailableAmenities: ["Free parking"],
     images: [IMG("photo-1611892440504-42a792e24d32"), IMG("photo-1590490360182-c33d57733427")],
     ratingAverage: 4.72,
     reviewCount: 98,
-    hostName: "Hotel Ribeira",
+    hostSlug: "hotel-ribeira",
   },
   {
     slug: "kyoto-machiya-house",
@@ -90,10 +239,11 @@ const properties: Array<{
     beds: 3,
     bathrooms: 2,
     amenities: ["Wifi", "Kitchen", "Garden", "Soaking tub", "Self check-in"],
+    unavailableAmenities: ["Air conditioning", "Elevator"],
     images: [IMG("photo-1545569341-9eb8b30979d9"), IMG("photo-1524413840807-0c3cb6fa808d")],
     ratingAverage: 4.94,
     reviewCount: 176,
-    hostName: "Takeshi",
+    hostSlug: "takeshi",
   },
   {
     slug: "santorini-cliff-villa",
@@ -112,10 +262,11 @@ const properties: Array<{
     beds: 4,
     bathrooms: 3,
     amenities: ["Wifi", "Private pool", "Sea view", "Kitchen", "Air conditioning", "Parking"],
+    unavailableAmenities: [],
     images: [IMG("photo-1613395877344-13d4a8e0d49e"), IMG("photo-1570213489059-0aac6626cade")],
     ratingAverage: 4.97,
     reviewCount: 312,
-    hostName: "Elena",
+    hostSlug: "elena",
   },
   {
     slug: "banff-mountain-cabin",
@@ -134,10 +285,11 @@ const properties: Array<{
     beds: 3,
     bathrooms: 2,
     amenities: ["Wifi", "Fireplace", "Kitchen", "Hot tub", "Parking", "Mountain view"],
+    unavailableAmenities: ["Air conditioning", "Elevator"],
     images: [IMG("photo-1449158743715-0a90ebb6d2d8"), IMG("photo-1518602164578-cd0074062767")],
     ratingAverage: 4.89,
     reviewCount: 143,
-    hostName: "Connor",
+    hostSlug: "connor",
   },
   {
     slug: "marrakech-riad-retreat",
@@ -156,10 +308,11 @@ const properties: Array<{
     beds: 5,
     bathrooms: 4,
     amenities: ["Wifi", "Rooftop terrace", "Breakfast included", "Air conditioning", "Courtyard"],
+    unavailableAmenities: ["Free parking", "Elevator"],
     images: [IMG("photo-1548013146-72479768bada"), IMG("photo-1517840901100-8179e982acb7")],
     ratingAverage: 4.91,
     reviewCount: 261,
-    hostName: "Youssef",
+    hostSlug: "youssef",
   },
   {
     slug: "manhattan-skyline-apartment",
@@ -178,10 +331,11 @@ const properties: Array<{
     beds: 2,
     bathrooms: 2,
     amenities: ["Wifi", "Gym access", "Doorman", "Kitchen", "Washer", "City view"],
+    unavailableAmenities: ["Free parking", "Pool"],
     images: [IMG("photo-1522708323590-d24dbb6b0267"), IMG("photo-1560448204-e02f11c3d0e2")],
     ratingAverage: 4.68,
     reviewCount: 87,
-    hostName: "Chris",
+    hostSlug: "chris",
   },
   {
     slug: "bali-rice-terrace-resort",
@@ -200,10 +354,11 @@ const properties: Array<{
     beds: 2,
     bathrooms: 1,
     amenities: ["Wifi", "Pool", "Spa access", "Breakfast included", "Rice field view"],
+    unavailableAmenities: [],
     images: [IMG("photo-1573843981267-be1999ff37cd"), IMG("photo-1540541338287-41700207dee6")],
     ratingAverage: 4.95,
     reviewCount: 402,
-    hostName: "Wayan",
+    hostSlug: "wayan",
   },
   {
     slug: "barcelona-gothic-hostel",
@@ -222,10 +377,11 @@ const properties: Array<{
     beds: 1,
     bathrooms: 1,
     amenities: ["Wifi", "Shared kitchen", "Rooftop bar", "Lockers", "Laundry"],
+    unavailableAmenities: ["Air conditioning", "Private bathroom"],
     images: [IMG("photo-1555854877-bab0e564b8d5"), IMG("photo-1520250497591-112f2f40a3f4")],
     ratingAverage: 4.51,
     reviewCount: 519,
-    hostName: "Casa Gòtic",
+    hostSlug: "casa-gotic",
   },
   {
     slug: "queenstown-lakeside-cabin",
@@ -244,10 +400,11 @@ const properties: Array<{
     beds: 2,
     bathrooms: 1,
     amenities: ["Wifi", "Lake access", "Fireplace", "Kitchen", "Parking", "Mountain view"],
+    unavailableAmenities: ["Air conditioning"],
     images: [IMG("photo-1449824913935-59a10b8d2000"), IMG("photo-1470770841072-f978cf4d019e")],
     ratingAverage: 4.9,
     reviewCount: 121,
-    hostName: "Isla",
+    hostSlug: "isla",
   },
   {
     slug: "dubai-marina-resort-suite",
@@ -266,10 +423,11 @@ const properties: Array<{
     beds: 2,
     bathrooms: 2,
     amenities: ["Wifi", "Private beach", "Pool", "Gym access", "Valet parking", "Sea view"],
+    unavailableAmenities: [],
     images: [IMG("photo-1582719478250-c89cae4dc85b"), IMG("photo-1571003123894-1f0594d2b5d9")],
     ratingAverage: 4.8,
     reviewCount: 156,
-    hostName: "Marina Resorts Group",
+    hostSlug: "marina-resorts-group",
   },
   {
     slug: "amalfi-coast-villa",
@@ -288,10 +446,11 @@ const properties: Array<{
     beds: 5,
     bathrooms: 4,
     amenities: ["Wifi", "Private pool", "Sea view", "Kitchen", "Garden", "Parking"],
+    unavailableAmenities: ["Elevator"],
     images: [IMG("photo-1533104816931-20fa691ff6ca"), IMG("photo-1512917774080-9991f1c4c750")],
     ratingAverage: 4.93,
     reviewCount: 189,
-    hostName: "Giulia",
+    hostSlug: "giulia",
   },
 ];
 
@@ -307,11 +466,26 @@ async function main() {
     },
   });
 
+  const hostIdBySlug = new Map<string, string>();
+  for (const host of hosts) {
+    const { slug, ...data } = host;
+    const record = await prisma.host.upsert({
+      where: { slug },
+      update: data,
+      create: { slug, ...data },
+    });
+    hostIdBySlug.set(slug, record.id);
+  }
+
   for (const property of properties) {
+    const { hostSlug, ...data } = property;
+    const hostId = hostIdBySlug.get(hostSlug);
+    if (!hostId) throw new Error(`Unknown hostSlug "${hostSlug}" for property "${property.slug}"`);
+
     await prisma.property.upsert({
       where: { slug: property.slug },
-      update: property,
-      create: property,
+      update: { ...data, hostId },
+      create: { ...data, hostId },
     });
   }
 
@@ -329,12 +503,14 @@ async function main() {
         propertyId: firstProperty.id,
         rating: 5,
         comment:
-          "Beautiful loft, exactly as pictured. Mariana was a fantastic host and the balcony view at sunset was unbeatable.",
+          "Beautiful loft, exactly as pictured. Mariana was a fantastic host and the balcony view at sunset was unbeatable. Great location too, right in the heart of Alfama.",
       },
     });
   }
 
-  console.log(`Seeded ${properties.length} properties and demo user (demo@wayfarer.test / password123).`);
+  console.log(
+    `Seeded ${hosts.length} hosts, ${properties.length} properties, and demo user (demo@wayfarer.test / password123).`,
+  );
 }
 
 main()

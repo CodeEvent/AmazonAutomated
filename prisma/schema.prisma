@@ -18,10 +18,16 @@ model User {
   image         String?
   passwordHash  String?
 
-  accounts Account[]
-  sessions Session[]
-  bookings Booking[]
-  reviews  Review[]
+  referralCode        String  @unique @default(cuid())
+  marketingOptIn      Boolean @default(true)
+  searchableProfile   Boolean @default(true)
+
+  accounts       Account[]
+  sessions       Session[]
+  bookings       Booking[]
+  reviews        Review[]
+  giftCards      GiftCard[]
+  coHostInquiries CoHostInquiry[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -90,13 +96,14 @@ model Property {
   beds         Int
   bathrooms    Int
   amenities    String[]
+  unavailableAmenities String[] @default([])
   images       String[]
 
   ratingAverage Float @default(0)
   reviewCount   Int   @default(0)
 
-  hostName  String
-  hostImage String?
+  hostId String
+  host   Host   @relation(fields: [hostId], references: [id])
 
   bookings Booking[]
   reviews  Review[]
@@ -106,6 +113,28 @@ model Property {
 
   @@index([city])
   @@index([type])
+  @@index([hostId])
+}
+
+model Host {
+  id        String  @id @default(cuid())
+  slug      String  @unique
+  name      String
+  image     String?
+  bio       String? @db.Text
+  education String?
+  work      String?
+
+  isSuperhost        Boolean @default(false)
+  yearsHosting        Int     @default(1)
+  responseRatePercent Int     @default(95)
+  ratingAverage        Float   @default(0)
+  reviewCount          Int     @default(0)
+
+  properties Property[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 enum BookingStatus {
@@ -127,9 +156,15 @@ model Booking {
   nightlyRate Int // cents, snapshot at time of booking
   cleaningFee Int // cents
   serviceFee  Int // cents
+  insuranceFee Int @default(0) // cents
   totalPrice  Int // cents
   status      BookingStatus @default(CONFIRMED)
   confirmationCode String     @unique
+
+  guestMessage      String? @db.Text
+  travelInsurance   Boolean @default(false)
+  payInInstallments Boolean @default(false)
+  paymentMethod     String  @default("card")
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
@@ -138,6 +173,37 @@ model Booking {
 
   @@index([userId])
   @@index([propertyId])
+}
+
+model GiftCard {
+  id      String @id @default(cuid())
+  code    String @unique
+  amount  Int // cents, original purchase amount
+  balance Int // cents, remaining balance
+
+  purchaserId    String
+  recipientEmail String?
+  recipientName  String?
+  message        String? @db.Text
+
+  purchaser User @relation(fields: [purchaserId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([purchaserId])
+}
+
+model CoHostInquiry {
+  id      String @id @default(cuid())
+  userId  String
+  city    String
+  message String @db.Text
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 model Review {
