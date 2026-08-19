@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { MotionConfig } from "motion/react";
 import "./globals.css";
@@ -18,6 +18,17 @@ const inter = Inter({
 export const metadata: Metadata = {
   title: "Wayfarer — Find your next stay",
   description: "Search and book hotels, apartments, and homes worldwide.",
+  manifest: "/manifest.webmanifest",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "Wayfarer",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#ffffff",
+  viewportFit: "cover",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
@@ -25,6 +36,11 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
 
   return (
     <html lang="en" className={`${inter.variable} h-full antialiased`}>
+      <head>
+        {/* Next's appleWebApp.capable only emits the modern mobile-web-app-capable
+            tag; older iOS versions still key standalone mode off this legacy one. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+      </head>
       <body className="min-h-full flex flex-col bg-canvas text-ink">
         <MotionConfig reducedMotion="user">
           <SiteHeader user={session?.user ?? null} />
