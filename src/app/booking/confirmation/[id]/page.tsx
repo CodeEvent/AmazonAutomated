@@ -7,6 +7,12 @@ import { Button } from "@/components/ui/button";
 import { SuccessCheck } from "@/components/motion/success-check";
 import { guestsSummaryLabel } from "@/lib/guests";
 
+const PAYMENT_METHOD_LABELS: Record<string, string> = {
+  card: "Credit or debit card",
+  apple_pay: "Apple Pay",
+  paypal: "PayPal",
+};
+
 export default async function BookingConfirmationPage({
   params,
 }: {
@@ -50,10 +56,32 @@ export default async function BookingConfirmationPage({
           <span>Guests</span>
           <span>{guestsSummaryLabel(booking)}</span>
         </div>
+        <div className="mt-2 flex justify-between text-sm text-ink">
+          <span>Payment method</span>
+          <span>{PAYMENT_METHOD_LABELS[booking.paymentMethod] ?? booking.paymentMethod}</span>
+        </div>
+        {booking.payInInstallments ? (
+          <div className="mt-2 flex justify-between text-sm text-ink">
+            <span>Payment plan</span>
+            <span>3 payments of {formatPrice(Math.round(booking.totalPrice / 3))}</span>
+          </div>
+        ) : null}
+        {booking.travelInsurance ? (
+          <div className="mt-2 flex justify-between text-sm text-ink">
+            <span>Travel insurance</span>
+            <span>{formatPrice(booking.insuranceFee)}</span>
+          </div>
+        ) : null}
         <div className="mt-4 flex justify-between border-t border-hairline-soft pt-4 text-base font-semibold text-ink">
           <span>Total paid</span>
           <span>{formatPrice(booking.totalPrice)}</span>
         </div>
+        {booking.guestMessage ? (
+          <div className="mt-4 border-t border-hairline-soft pt-4">
+            <p className="text-sm font-semibold text-ink">Your message to the host</p>
+            <p className="mt-1 text-sm text-body">{booking.guestMessage}</p>
+          </div>
+        ) : null}
       </div>
 
       <div className="mt-8 flex justify-center gap-3">

@@ -22,6 +22,10 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
     children: formData.get("children"),
     infants: formData.get("infants"),
     pets: formData.get("pets"),
+    guestMessage: formData.get("guestMessage") ?? "",
+    travelInsurance: formData.get("travelInsurance") === "1",
+    payInInstallments: formData.get("payInInstallments") === "1",
+    paymentMethod: formData.get("paymentMethod") ?? "card",
   });
 
   const property = await prisma.property.findUnique({ where: { id: parsed.propertyId } });
@@ -47,7 +51,11 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
   }
 
   const nights = nightsBetween(checkIn, checkOut);
-  const { cleaningFee, serviceFee, total } = computeBookingTotals(property.pricePerNight, nights);
+  const { cleaningFee, serviceFee, insuranceFee, total } = computeBookingTotals(
+    property.pricePerNight,
+    nights,
+    parsed.travelInsurance,
+  );
 
   const booking = await prisma.booking.create({
     data: {
@@ -63,8 +71,13 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
       nightlyRate: property.pricePerNight,
       cleaningFee,
       serviceFee,
+      insuranceFee,
       totalPrice: total,
       confirmationCode: generateConfirmationCode(),
+      guestMessage: parsed.guestMessage || null,
+      travelInsurance: parsed.travelInsurance,
+      payInInstallments: parsed.payInInstallments,
+      paymentMethod: parsed.paymentMethod,
     },
   });
 

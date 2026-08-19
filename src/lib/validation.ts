@@ -20,6 +20,10 @@ export const bookingSchema = z
     children: z.coerce.number().int().min(0).max(32).default(0),
     infants: z.coerce.number().int().min(0).max(32).default(0),
     pets: z.coerce.number().int().min(0).max(32).default(0),
+    guestMessage: z.string().trim().max(1000).default(""),
+    travelInsurance: z.coerce.boolean().default(false),
+    payInInstallments: z.coerce.boolean().default(false),
+    paymentMethod: z.enum(["card", "apple_pay", "paypal"]).default("card"),
   })
   .refine((data) => new Date(data.checkOut) > new Date(data.checkIn), {
     message: "Check-out must be after check-in",
