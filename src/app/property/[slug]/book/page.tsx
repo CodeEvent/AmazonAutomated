@@ -8,7 +8,7 @@ import { confirmBookingAction } from "@/lib/actions/booking-actions";
 import { isRangeAvailable } from "@/lib/availability";
 import { guestsSummaryLabel, parseGuestsFromParams } from "@/lib/guests";
 import { isRareFind } from "@/lib/badges";
-import { BookingWizard } from "@/components/booking/booking-wizard";
+import { BookingReview } from "@/components/booking/booking-review";
 
 type BookPageProps = {
   params: Promise<{ slug: string }>;
@@ -70,7 +70,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
   }
 
   const nights = nightsBetween(checkIn, checkOut);
-  const { subtotal, cleaningFee, serviceFee, total } = computeBookingTotals(
+  const { subtotal, longStayDiscount, cleaningFee, serviceFee, total } = computeBookingTotals(
     property.pricePerNight,
     nights,
   );
@@ -78,7 +78,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
 
   return (
     <div className="mx-auto max-w-[900px] px-0 py-4 sm:px-8 sm:py-10">
-      <BookingWizard
+      <BookingReview
         action={confirmBookingAction}
         propertySlug={property.slug}
         propertyName={property.name}
@@ -101,6 +101,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
         nights={nights}
         nightlyRate={property.pricePerNight}
         subtotal={subtotal}
+        longStayDiscount={longStayDiscount}
         cleaningFee={cleaningFee}
         serviceFee={serviceFee}
         baseTotal={total}
