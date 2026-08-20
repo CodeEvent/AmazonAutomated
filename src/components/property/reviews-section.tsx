@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { InitialAvatar } from "@/components/ui/initial-avatar";
+import { relativeTimeLabel, tenureLabel } from "@/lib/relative-time";
 
 type ReviewData = {
   id: string;
   rating: number;
   comment: string;
   createdAt: Date;
-  user: { name: string | null };
+  user: { name: string | null; createdAt: Date };
 };
 
 const TOPIC_KEYWORDS: Array<{ label: string; emoji: string; keywords: string[] }> = [
@@ -45,6 +47,7 @@ export function ReviewsSection({
   reviewCount: number;
 }) {
   const [showAll, setShowAll] = useState(false);
+  const [howReviewsWorkOpen, setHowReviewsWorkOpen] = useState(false);
   const topics = extractTopics(reviews);
   const visible = showAll ? reviews : reviews.slice(0, 6);
 
@@ -58,6 +61,20 @@ export function ReviewsSection({
         <p className="mt-4 text-sm text-muted">No reviews yet.</p>
       ) : (
         <>
+          <button
+            type="button"
+            onClick={() => setHowReviewsWorkOpen((v) => !v)}
+            className="mt-2 text-sm font-semibold text-ink underline underline-offset-2"
+          >
+            How reviews work
+          </button>
+          {howReviewsWorkOpen ? (
+            <p className="mt-2 max-w-lg text-sm text-muted">
+              Ratings and reviews are only visible once a guest has completed their stay, and only
+              guests who booked through Wayfarer can leave one.
+            </p>
+          ) : null}
+
           {topics.length > 0 ? (
             <div className="mt-6">
               <h3 className="text-base font-semibold text-ink">Guest reviews mention</h3>
@@ -76,15 +93,7 @@ export function ReviewsSection({
 
           <div className="mt-6 grid grid-cols-1 gap-8 sm:grid-cols-2">
             {visible.map((review) => (
-              <div key={review.id}>
-                <p className="text-sm font-semibold text-ink">{review.user.name ?? "Guest"}</p>
-                <p className="mt-1 flex items-center gap-1 text-sm text-muted">
-                  {"★".repeat(review.rating)}
-                  {"☆".repeat(Math.max(0, 5 - review.rating))} ·{" "}
-                  {new Intl.DateTimeFormat("en-US", { month: "long", year: "numeric" }).format(review.createdAt)}
-                </p>
-                <p className="mt-2 text-sm text-body">{review.comment}</p>
-              </div>
+              <ReviewCard key={review.id} review={review} />
             ))}
           </div>
 
@@ -100,6 +109,38 @@ export function ReviewsSection({
         </>
       )}
     </section>
+  );
+}
+
+function ReviewCard({ review }: { review: ReviewData }) {
+  const [expanded, setExpanded] = useState(false);
+  const isLong = review.comment.length > 220;
+  const name = review.user.name ?? "Guest";
+
+  return (
+    <div>
+      <div className="flex items-center gap-2.5">
+        <InitialAvatar name={name} size={40} />
+        <div>
+          <p className="text-sm font-semibold text-ink">{name}</p>
+          <p className="text-xs text-muted">{tenureLabel(review.user.createdAt)}</p>
+        </div>
+      </div>
+      <p className="mt-2 flex items-center gap-1 text-sm text-muted">
+        {"★".repeat(review.rating)}
+        {"☆".repeat(Math.max(0, 5 - review.rating))} · {relativeTimeLabel(review.createdAt)}
+      </p>
+      <p className={`mt-2 text-sm text-body ${expanded ? "" : "line-clamp-4"}`}>{review.comment}</p>
+      {isLong ? (
+        <button
+          type="button"
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 text-sm font-semibold text-ink underline underline-offset-2"
+        >
+          {expanded ? "Show less" : "Show more"}
+        </button>
+      ) : null}
+    </div>
   );
 }
 

@@ -1,6 +1,25 @@
-import type { Host } from "@/generated/prisma/client";
+import type { Host, Property } from "@/generated/prisma/client";
+import { ExpandableText } from "@/components/ui/expandable-text";
+import { HostListingsRail } from "@/components/property/host-listings-rail";
+import { HostReviewsRail } from "@/components/property/host-reviews-rail";
 
-export function HostCard({ host }: { host: Host }) {
+type HostReview = {
+  id: string;
+  rating: number;
+  comment: string;
+  createdAt: Date;
+  user: { name: string | null; createdAt: Date };
+};
+
+export function HostCard({
+  host,
+  otherListings = [],
+  hostReviews = [],
+}: {
+  host: Host;
+  otherListings?: Property[];
+  hostReviews?: HostReview[];
+}) {
   const initial = host.name.trim().charAt(0).toUpperCase();
 
   return (
@@ -60,9 +79,32 @@ export function HostCard({ host }: { host: Host }) {
             <BriefcaseIcon /> My work: {host.work}
           </p>
         ) : null}
+        {host.languages.length > 0 ? (
+          <p className="flex items-center gap-3 text-base text-ink">
+            <GlobeIcon /> Speaks {host.languages.join(" and ")}
+          </p>
+        ) : null}
+        {host.livesIn ? (
+          <p className="flex items-center gap-3 text-base text-ink">
+            <PinIcon /> Lives in {host.livesIn}
+          </p>
+        ) : null}
+        {host.identityVerified ? (
+          <p className="flex items-center gap-3 text-base text-ink">
+            <ShieldIcon /> Identity verified
+          </p>
+        ) : null}
       </div>
 
-      {host.bio ? <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-body">{host.bio}</p> : null}
+      {host.bio ? (
+        host.bio.length > 150 ? (
+          <div className="mt-4 text-base leading-relaxed text-body">
+            <ExpandableText text={host.bio} clampLines={3} />
+          </div>
+        ) : (
+          <p className="mt-4 whitespace-pre-line text-base leading-relaxed text-body">{host.bio}</p>
+        )
+      ) : null}
 
       {host.isSuperhost ? (
         <div className="mt-6 border-t border-hairline-soft pt-6">
@@ -78,6 +120,9 @@ export function HostCard({ host }: { host: Host }) {
         <p className="mt-1 text-sm text-muted">Response rate: {host.responseRatePercent}%</p>
         <p className="text-sm text-muted">Responds within an hour</p>
       </div>
+
+      <HostReviewsRail hostName={host.name} reviews={hostReviews} />
+      <HostListingsRail hostName={host.name} listings={otherListings} />
 
       <a
         href="#reserve"
@@ -118,6 +163,33 @@ function BriefcaseIcon() {
     <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-ink stroke-[1.5]">
       <rect x="3" y="7" width="18" height="13" rx="2" />
       <path d="M8 7V5a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  );
+}
+
+function GlobeIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-ink stroke-[1.5]">
+      <circle cx="12" cy="12" r="9" />
+      <path d="M3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />
+    </svg>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-ink stroke-[1.5]">
+      <path d="M12 21s7-6.5 7-12a7 7 0 1 0-14 0c0 5.5 7 12 7 12z" />
+      <circle cx="12" cy="9" r="2.5" />
+    </svg>
+  );
+}
+
+function ShieldIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-ink stroke-[1.5]">
+      <path d="M12 3l7 3v6c0 4.5-3 8-7 9-4-1-7-4.5-7-9V6l7-3z" />
+      <path d="M9 12l2 2 4-4" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );
 }

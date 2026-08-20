@@ -15,7 +15,10 @@ const hosts: Array<{
   bio: string;
   education?: string;
   work?: string;
+  livesIn?: string;
+  languages: string[];
   isSuperhost: boolean;
+  identityVerified: boolean;
   yearsHosting: number;
   responseRatePercent: number;
   ratingAverage: number;
@@ -27,7 +30,10 @@ const hosts: Array<{
     bio: "Born and raised in Alfama. I restored this loft myself and love pointing guests toward the miradouros only locals know about.",
     education: "University of Lisbon",
     work: "Interior designer",
+    livesIn: "Lisbon, Portugal",
+    languages: ["Portuguese", "English", "Spanish"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 6,
     responseRatePercent: 99,
     ratingAverage: 4.86,
@@ -37,7 +43,10 @@ const hosts: Array<{
     slug: "hotel-ribeira",
     name: "Hotel Ribeira",
     bio: "A family-run boutique hotel on Praça do Comércio, three generations in the hospitality business.",
+    livesIn: "Lisbon, Portugal",
+    languages: ["Portuguese", "English", "French"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 9,
     responseRatePercent: 97,
     ratingAverage: 4.72,
@@ -49,7 +58,10 @@ const hosts: Array<{
     bio: "I grew up two streets over from this machiya and spent five years restoring it board by board. Happy to share the best quiet corners of Higashiyama.",
     education: "Kyoto Institute of Technology",
     work: "Woodworker",
+    livesIn: "Kyoto, Japan",
+    languages: ["Japanese", "English"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 8,
     responseRatePercent: 100,
     ratingAverage: 4.94,
@@ -60,7 +72,10 @@ const hosts: Array<{
     name: "Elena",
     bio: "Third-generation Santorini local. My family has owned this cliffside plot since the 1960s.",
     work: "Architect",
+    livesIn: "Santorini, Greece",
+    languages: ["Greek", "English", "Italian"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 11,
     responseRatePercent: 98,
     ratingAverage: 4.97,
@@ -71,7 +86,10 @@ const hosts: Array<{
     name: "Connor",
     bio: "Mountain guide turned host. I still lead trail runs most mornings if guests want company.",
     work: "Mountain guide",
+    livesIn: "Banff, Canada",
+    languages: ["English", "French"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 5,
     responseRatePercent: 96,
     ratingAverage: 4.89,
@@ -82,7 +100,10 @@ const hosts: Array<{
     name: "Youssef",
     bio: "As citizens of Marrakech we'd be more than happy to point you toward the best souks, hammams, and rooftop views the medina has to offer.",
     work: "Textile trader",
+    livesIn: "Marrakech, Morocco",
+    languages: ["Arabic", "French", "English"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 7,
     responseRatePercent: 99,
     ratingAverage: 4.91,
@@ -93,7 +114,10 @@ const hosts: Array<{
     name: "Chris",
     bio: "Midtown native, happy to help with restaurant reservations and Broadway tickets.",
     work: "Product manager",
+    livesIn: "New York, United States",
+    languages: ["English"],
     isSuperhost: false,
+    identityVerified: true,
     yearsHosting: 3,
     responseRatePercent: 92,
     ratingAverage: 4.68,
@@ -104,7 +128,10 @@ const hosts: Array<{
     name: "Wayan",
     bio: "Our family has farmed these rice terraces for generations. The resort was built to share that view with travelers.",
     work: "Resort manager",
+    livesIn: "Ubud, Indonesia",
+    languages: ["Indonesian", "English"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 10,
     responseRatePercent: 99,
     ratingAverage: 4.95,
@@ -114,7 +141,10 @@ const hosts: Array<{
     slug: "casa-gotic",
     name: "Casa Gòtic",
     bio: "A small team running one lively hostel in the Gothic Quarter since 2014.",
+    livesIn: "Barcelona, Spain",
+    languages: ["Spanish", "Catalan", "English"],
     isSuperhost: false,
+    identityVerified: true,
     yearsHosting: 12,
     responseRatePercent: 90,
     ratingAverage: 4.51,
@@ -125,7 +155,10 @@ const hosts: Array<{
     name: "Isla",
     bio: "I split my time between guiding on Lake Wakatipu and hosting travelers in the cabin next door.",
     work: "Kayak guide",
+    livesIn: "Queenstown, New Zealand",
+    languages: ["English"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 4,
     responseRatePercent: 98,
     ratingAverage: 4.9,
@@ -135,7 +168,10 @@ const hosts: Array<{
     slug: "marina-resorts-group",
     name: "Marina Resorts Group",
     bio: "We operate a small collection of waterfront properties along Dubai Marina.",
+    livesIn: "Dubai, United Arab Emirates",
+    languages: ["Arabic", "English", "Hindi"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 8,
     responseRatePercent: 95,
     ratingAverage: 4.8,
@@ -146,7 +182,10 @@ const hosts: Array<{
     name: "Giulia",
     bio: "My grandparents planted the lemon grove this villa sits in. I still press the oil we leave guests each stay.",
     work: "Farmer",
+    livesIn: "Praiano, Italy",
+    languages: ["Italian", "English"],
     isSuperhost: true,
+    identityVerified: true,
     yearsHosting: 9,
     responseRatePercent: 100,
     ratingAverage: 4.93,
@@ -489,27 +528,83 @@ async function main() {
     });
   }
 
-  const firstProperty = await prisma.property.findUnique({
-    where: { slug: properties[0].slug },
-  });
+  const now = Date.now();
+  const yearsAgo = (n: number) => new Date(now - n * 365.25 * 24 * 60 * 60 * 1000);
+  const monthsAgo = (n: number) => new Date(now - n * 30 * 24 * 60 * 60 * 1000);
 
-  if (firstProperty) {
-    await prisma.review.deleteMany({
-      where: { propertyId: firstProperty.id, userId: demoUser.id },
+  const reviewerSeeds = [
+    { email: "reviewer.priya@wayfarer.test", name: "Priya", createdAt: yearsAgo(3) },
+    { email: "reviewer.marco@wayfarer.test", name: "Marco", createdAt: monthsAgo(8) },
+    { email: "reviewer.sofia@wayfarer.test", name: "Sofia", createdAt: yearsAgo(1) },
+  ];
+
+  const reviewerIdByName = new Map<string, string>();
+  for (const reviewer of reviewerSeeds) {
+    const record = await prisma.user.upsert({
+      where: { email: reviewer.email },
+      update: { name: reviewer.name, createdAt: reviewer.createdAt },
+      create: { email: reviewer.email, name: reviewer.name, createdAt: reviewer.createdAt },
     });
+    reviewerIdByName.set(reviewer.name, record.id);
+  }
+
+  const reviewSeeds: Array<{
+    propertySlug: string;
+    reviewerName: string | "demo";
+    rating: number;
+    comment: string;
+  }> = [
+    {
+      propertySlug: "sunset-loft-lisbon",
+      reviewerName: "demo",
+      rating: 5,
+      comment:
+        "Beautiful loft, exactly as pictured. Mariana was a fantastic host and the balcony view at sunset was unbeatable. Great location too, right in the heart of Alfama.",
+    },
+    {
+      propertySlug: "sunset-loft-lisbon",
+      reviewerName: "Priya",
+      rating: 5,
+      comment:
+        "One of the best stays we've had in Lisbon. The apartment was spotless when we arrived, and Mariana's local recommendations for restaurants near the water were spot on. We'd happily book again — the value for what you get in this location is hard to beat, and the wifi was fast enough to work remotely for a few days without any issues.",
+    },
+    {
+      propertySlug: "sunset-loft-lisbon",
+      reviewerName: "Marco",
+      rating: 4,
+      comment:
+        "Great central location, close to everything in Alfama. Only downside was some noise from the street at night, but that's the tradeoff for being so walkable.",
+    },
+    {
+      propertySlug: "santorini-cliff-villa",
+      reviewerName: "Sofia",
+      rating: 5,
+      comment:
+        "The view from the pool at sunset is exactly what you see in the photos — genuinely one of the most beautiful places we've ever stayed. Elena checked in on us throughout the trip to make sure everything was perfect.",
+    },
+    {
+      propertySlug: "santorini-cliff-villa",
+      reviewerName: "Priya",
+      rating: 5,
+      comment: "Quiet, private, and the location can't be beat. Worth every penny.",
+    },
+  ];
+
+  for (const seed of reviewSeeds) {
+    const property = await prisma.property.findUnique({ where: { slug: seed.propertySlug } });
+    if (!property) continue;
+
+    const userId = seed.reviewerName === "demo" ? demoUser.id : reviewerIdByName.get(seed.reviewerName);
+    if (!userId) continue;
+
+    await prisma.review.deleteMany({ where: { propertyId: property.id, userId } });
     await prisma.review.create({
-      data: {
-        userId: demoUser.id,
-        propertyId: firstProperty.id,
-        rating: 5,
-        comment:
-          "Beautiful loft, exactly as pictured. Mariana was a fantastic host and the balcony view at sunset was unbeatable. Great location too, right in the heart of Alfama.",
-      },
+      data: { userId, propertyId: property.id, rating: seed.rating, comment: seed.comment },
     });
   }
 
   console.log(
-    `Seeded ${hosts.length} hosts, ${properties.length} properties, and demo user (demo@wayfarer.test / password123).`,
+    `Seeded ${hosts.length} hosts, ${properties.length} properties, ${reviewSeeds.length} reviews, and demo user (demo@wayfarer.test / password123).`,
   );
 }
 

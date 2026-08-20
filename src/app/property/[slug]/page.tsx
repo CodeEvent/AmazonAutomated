@@ -9,7 +9,12 @@ import { PhotoGrid } from "@/components/property/photo-grid";
 import { HostCard } from "@/components/property/host-card";
 import { AmenitiesSection } from "@/components/property/amenities-section";
 import { ReviewsSection } from "@/components/property/reviews-section";
+import { PropertyHighlights } from "@/components/property/property-highlights";
+import { ExpandableText } from "@/components/ui/expandable-text";
 import { isRareFind } from "@/lib/badges";
+import { hasLongStayDiscount } from "@/lib/pricing";
+import { getPropertyHighlights } from "@/lib/property-highlights";
+import { getOtherListingsByHost, getHostReviews } from "@/lib/host-profile";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -27,7 +32,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
       reviews: {
         orderBy: { createdAt: "desc" },
         take: 50,
-        include: { user: { select: { name: true } } },
+        include: { user: { select: { name: true, createdAt: true } } },
       },
     },
   });
@@ -36,9 +41,17 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     notFound();
   }
 
-  const blockedRanges = await getBlockedRanges(property.id);
+  const [blockedRanges, otherListings, hostReviews] = await Promise.all([
+    getBlockedRanges(property.id),
+    getOtherListingsByHost(property.hostId, property.id),
+    getHostReviews(property.hostId),
+  ]);
   const guests = parseGuestsFromParams(query);
   const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
+  const highlights = getPropertyHighlights(property);
+  // Every stay of 2+ nights qualifies for the long-stay discount (see pricing.ts's
+  // LONG_STAY_MIN_NIGHTS), which covers virtually every real booking, so this badge is unconditional.
+  const extendedStayDiscount = hasLongStayDiscount(2);
 
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -60,6 +73,12 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
           <span className="flex items-center gap-1 font-medium text-brand">💎 Rare find</span>
         ) : null}
       </div>
+
+      {extendedStayDiscount ? (
+        <span className="mt-3 inline-block rounded-full bg-green-50 px-3 py-1 text-sm font-medium text-green-700">
+          Extended stay discount
+        </span>
+      ) : null}
 
       <PhotoGrid images={property.images} alt={property.name} />
 
@@ -84,15 +103,22 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
 
       <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
         <div>
+          <PropertyHighlights highlights={highlights} />
+
           <section className="border-b border-hairline-soft py-8">
-            <p className="whitespace-pre-line text-base leading-relaxed text-body">
-              {property.description}
-            </p>
+            <h2 className="text-xl font-bold text-ink">About this place</h2>
+            <div className="mt-3 text-base leading-relaxed text-body">
+              {property.description.length > 220 ? (
+                <ExpandableText text={property.description} clampLines={4} />
+              ) : (
+                <p className="whitespace-pre-line">{property.description}</p>
+              )}
+            </div>
           </section>
 
           <AmenitiesSection amenities={property.amenities} unavailableAmenities={property.unavailableAmenities} />
 
-          <HostCard host={property.host} />
+          <HostCard host={property.host} otherListings={otherListings} hostReviews={hostReviews} />
 
           <ReviewsSection
             reviews={property.reviews}

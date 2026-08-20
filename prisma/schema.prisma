@@ -124,8 +124,11 @@ model Host {
   bio       String? @db.Text
   education String?
   work      String?
+  livesIn   String?
+  languages String[] @default([])
 
   isSuperhost        Boolean @default(false)
+  identityVerified    Boolean @default(false)
   yearsHosting        Int     @default(1)
   responseRatePercent Int     @default(95)
   ratingAverage        Float   @default(0)
