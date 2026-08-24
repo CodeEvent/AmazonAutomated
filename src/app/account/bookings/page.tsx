@@ -35,10 +35,19 @@ export default async function MyBookingsPage() {
             <Link
               key={booking.id}
               href={`/booking/confirmation/${booking.id}`}
-              className="flex items-center justify-between gap-4 py-5"
+              className={`flex items-center justify-between gap-4 py-5 ${
+                booking.status === "CANCELLED" ? "opacity-60" : ""
+              }`}
             >
               <div>
-                <p className="text-base font-semibold text-ink">{booking.property.name}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-base font-semibold text-ink">{booking.property.name}</p>
+                  {booking.status === "CANCELLED" ? (
+                    <span className="rounded-full bg-surface-soft px-2 py-0.5 text-xs font-medium text-muted">
+                      Cancelled
+                    </span>
+                  ) : null}
+                </div>
                 <p className="mt-1 text-sm text-muted">
                   {formatDateShort(booking.checkIn)} – {formatDateShort(booking.checkOut)} ·{" "}
                   {guestsSummaryLabel(booking)}

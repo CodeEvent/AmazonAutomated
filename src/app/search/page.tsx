@@ -139,7 +139,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
         <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
           {properties.map((property, index) => (
             <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
-              <PropertyCard property={property} searchQuery={propertyLinkQuery} />
+              <PropertyCard property={property} searchQuery={propertyLinkQuery} showDetails />
             </Reveal>
           ))}
         </div>

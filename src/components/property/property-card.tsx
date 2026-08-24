@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
 import { PropertyCardGallery } from "@/components/property/property-card-gallery";
+import { ratingLabel } from "@/lib/rating-label";
 
 export type PropertyCardData = {
   slug: string;
@@ -11,20 +12,26 @@ export type PropertyCardData = {
   ratingAverage: number;
   reviewCount: number;
   images: string[];
+  amenities?: string[];
 };
 
 export function PropertyCard({
   property,
   searchQuery,
+  showDetails = false,
 }: {
   property: PropertyCardData;
   /** Query string (no leading "?") carrying the current search's dates/guests into the listing page. */
   searchQuery?: string;
+  /** Extra info density (rating label, facility chips) for result-list contexts like /search. */
+  showDetails?: boolean;
 }) {
   const isGuestFavorite = property.reviewCount > 10 && property.ratingAverage >= 4.7;
   const href = searchQuery
     ? `/property/${property.slug}?${searchQuery}`
     : `/property/${property.slug}`;
+  const label = showDetails ? ratingLabel(property.ratingAverage) : null;
+  const facilities = showDetails ? (property.amenities ?? []).slice(0, 3) : [];
 
   return (
     <Link
@@ -47,9 +54,26 @@ export function PropertyCard({
             </span>
           ) : null}
         </div>
+        {label ? (
+          <p className="text-sm text-ink">
+            {label} <span className="text-muted">· {property.reviewCount} reviews</span>
+          </p>
+        ) : null}
         <p className="truncate text-sm text-muted">
           {property.city}, {property.country}
         </p>
+        {facilities.length > 0 ? (
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
+            {facilities.map((amenity) => (
+              <span
+                key={amenity}
+                className="rounded-full border border-hairline px-2 py-0.5 text-xs text-muted"
+              >
+                {amenity}
+              </span>
+            ))}
+          </div>
+        ) : null}
         <p className="text-sm text-ink">
           <span className="font-semibold">{formatPrice(property.pricePerNight)}</span> night
         </p>
