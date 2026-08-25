@@ -8,6 +8,94 @@ const prisma = new PrismaClient({ adapter });
 
 const IMG = (id: string) => `https://images.unsplash.com/${id}?auto=format&fit=crop&w=1200&q=80`;
 
+type RoomTypeSeed = {
+  name: string;
+  maxGuests: number;
+  bedConfiguration: string;
+  sizeSqm?: number;
+  pricePerNight: number;
+  quantity: number;
+  amenities: string[];
+  freeCancellation: boolean;
+};
+
+/**
+ * Multi-room-type hotels/resorts, matching Booking.com's per-room-type availability
+ * table. Every other property gets a single auto-derived "Entire place" room type
+ * from its own price/maxGuests/beds (see main()) since it's one bookable unit.
+ */
+const roomTypeOverrides: Record<string, RoomTypeSeed[]> = {
+  "harborview-suite-lisbon": [
+    {
+      name: "Classic Room",
+      maxGuests: 2,
+      bedConfiguration: "1 double bed",
+      sizeSqm: 22,
+      pricePerNight: 21800,
+      quantity: 3,
+      amenities: ["City view", "Air conditioning", "Free WiFi"],
+      freeCancellation: true,
+    },
+    {
+      name: "Harbor View Suite",
+      maxGuests: 3,
+      bedConfiguration: "1 king bed, 1 sofa bed",
+      sizeSqm: 38,
+      pricePerNight: 30800,
+      quantity: 2,
+      amenities: ["Harbor view", "Air conditioning", "Free WiFi", "Minibar"],
+      freeCancellation: true,
+    },
+  ],
+  "bali-rice-terrace-resort": [
+    {
+      name: "Garden View Room",
+      maxGuests: 2,
+      bedConfiguration: "1 queen bed",
+      sizeSqm: 28,
+      pricePerNight: 24500,
+      quantity: 4,
+      amenities: ["Rice field view", "Air conditioning", "Free WiFi"],
+      freeCancellation: true,
+    },
+    {
+      name: "Pool Villa Suite",
+      maxGuests: 3,
+      bedConfiguration: "1 king bed, 1 daybed",
+      sizeSqm: 55,
+      pricePerNight: 36500,
+      quantity: 2,
+      amenities: ["Private pool", "Rice field view", "Breakfast included"],
+      freeCancellation: true,
+    },
+  ],
+  "dubai-marina-resort-suite": [
+    {
+      name: "Marina View Room",
+      maxGuests: 2,
+      bedConfiguration: "1 king bed",
+      sizeSqm: 32,
+      pricePerNight: 41200,
+      quantity: 3,
+      amenities: ["Marina view", "Air conditioning", "Free WiFi"],
+      freeCancellation: true,
+    },
+    {
+      name: "Beachfront Suite",
+      maxGuests: 4,
+      bedConfiguration: "2 queen beds",
+      sizeSqm: 60,
+      pricePerNight: 56200,
+      quantity: 2,
+      amenities: ["Private beach access", "Sea view", "Pool access"],
+      freeCancellation: true,
+    },
+  ],
+};
+
+// Budget/hostel-style stays are the one category seeded non-refundable, for variety.
+const nonRefundableSlugs = new Set(["barcelona-gothic-hostel"]);
+
 const hosts: Array<{
   slug: string;
   name: string;
@@ -521,10 +609,39 @@ async function main() {
     const hostId = hostIdBySlug.get(hostSlug);
     if (!hostId) throw new Error(`Unknown hostSlug "${hostSlug}" for property "${property.slug}"`);
 
-    await prisma.property.upsert({
+    const record = await prisma.property.upsert({
       where: { slug: property.slug },
       update: { ...data, hostId },
       create: { ...data, hostId },
+    });
+
+    const roomTypes: RoomTypeSeed[] = roomTypeOverrides[property.slug] ?? [
+      {
+        name: "Entire place",
+        maxGuests: property.maxGuests,
+        bedConfiguration: `${property.beds} bed${property.beds === 1 ? "" : "s"}`,
+        pricePerNight: property.pricePerNight,
+        quantity: 1,
+        amenities: [],
+        freeCancellation: !nonRefundableSlugs.has(property.slug),
+      },
+    ];
+
+    for (const roomType of roomTypes) {
+      await prisma.roomType.upsert({
+        where: { propertyId_name: { propertyId: record.id, name: roomType.name } },
+        update: { ...roomType, propertyId: record.id },
+        create: { ...roomType, propertyId: record.id },
+      });
+    }
+
+    // Drop any stale room type left over from an earlier seed shape (e.g. the
+    // auto-backfilled "Entire place" row on properties that now define explicit
+    // overrides). Bookings referencing a room type block its deletion (onDelete:
+    // Restrict), so this only ever removes genuinely unused rows.
+    const currentNames = roomTypes.map((rt) => rt.name);
+    await prisma.roomType.deleteMany({
+      where: { propertyId: record.id, name: { notIn: currentNames }, bookings: { none: {} } },
     });
   }
 

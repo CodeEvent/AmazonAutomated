@@ -19,16 +19,19 @@ export function BookingReview({
   action,
   propertySlug,
   propertyName,
+  roomTypeName,
   propertyImage,
   ratingAverage,
   reviewCount,
   isSuperhost,
   rareFind,
+  freeCancellation,
   hostName,
   checkInLabel,
   checkOutLabel,
   guestsLabel,
   propertyId,
+  roomTypeId,
   checkIn,
   checkOut,
   adults,
@@ -46,16 +49,19 @@ export function BookingReview({
   action: (formData: FormData) => void;
   propertySlug: string;
   propertyName: string;
+  roomTypeName: string;
   propertyImage: string | undefined;
   ratingAverage: number;
   reviewCount: number;
   isSuperhost: boolean;
   rareFind: boolean;
+  freeCancellation: boolean;
   hostName: string;
   checkInLabel: string;
   checkOutLabel: string;
   guestsLabel: string;
   propertyId: string;
+  roomTypeId: string;
   checkIn: string;
   checkOut: string;
   adults: number;
@@ -83,6 +89,7 @@ export function BookingReview({
   return (
     <form action={action} className="mx-auto max-w-[560px]">
       <input type="hidden" name="propertyId" value={propertyId} />
+      <input type="hidden" name="roomTypeId" value={roomTypeId} />
       <input type="hidden" name="checkIn" value={checkIn} />
       <input type="hidden" name="checkOut" value={checkOut} />
       <input type="hidden" name="adults" value={adults} />
@@ -103,20 +110,21 @@ export function BookingReview({
         <div className="px-4 sm:px-0">
           <ListingSummary
             propertyName={propertyName}
+            roomTypeName={roomTypeName}
             propertyImage={propertyImage}
             ratingAverage={ratingAverage}
             reviewCount={reviewCount}
             isSuperhost={isSuperhost}
           />
 
-          <Row label="Dates" href={`/property/${propertySlug}#reserve`}>
+          <Row label="Dates" href={`/property/${propertySlug}#availability`}>
             <p className="text-sm text-ink">
               {checkInLabel} – {checkOutLabel}
             </p>
             {rareFind ? <p className="mt-1 text-sm font-medium text-brand">💎 Rare find</p> : null}
           </Row>
 
-          <Row label="Guests" href={`/property/${propertySlug}#reserve`}>
+          <Row label="Guests" href={`/property/${propertySlug}#availability`}>
             <p className="text-sm text-ink">{guestsLabel}</p>
           </Row>
 
@@ -131,7 +139,9 @@ export function BookingReview({
           </a>
 
           <p className="border-t border-hairline-soft py-4 text-sm text-muted">
-            This reservation is non-refundable.{" "}
+            {freeCancellation
+              ? "Free cancellation before check-in."
+              : "This reservation is non-refundable."}{" "}
             <Link href="/account/legal" className="font-medium text-ink underline">
               Full policy
             </Link>
@@ -288,12 +298,14 @@ function Header({ propertySlug, onBack }: { propertySlug: string; onBack: (() =>
 
 function ListingSummary({
   propertyName,
+  roomTypeName,
   propertyImage,
   ratingAverage,
   reviewCount,
   isSuperhost,
 }: {
   propertyName: string;
+  roomTypeName: string;
   propertyImage: string | undefined;
   ratingAverage: number;
   reviewCount: number;
@@ -308,6 +320,7 @@ function ListingSummary({
       ) : null}
       <div>
         <p className="text-base font-semibold text-ink">{propertyName}</p>
+        {roomTypeName !== "Entire place" ? <p className="text-sm text-muted">{roomTypeName}</p> : null}
         {reviewCount > 0 ? (
           <p className="mt-1 flex items-center gap-1 text-sm text-ink">
             <StarIcon /> {ratingAverage.toFixed(2)} ({reviewCount}){" "}

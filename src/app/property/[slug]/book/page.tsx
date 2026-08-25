@@ -5,7 +5,7 @@ import { bookingSchema } from "@/lib/validation";
 import { computeBookingTotals } from "@/lib/pricing";
 import { formatDateShort, nightsBetween } from "@/lib/format";
 import { confirmBookingAction } from "@/lib/actions/booking-actions";
-import { isRangeAvailable } from "@/lib/availability";
+import { isRoomTypeAvailable } from "@/lib/availability";
 import { guestsSummaryLabel, parseGuestsFromParams } from "@/lib/guests";
 import { isRareFind } from "@/lib/badges";
 import { BookingReview } from "@/components/booking/booking-review";
@@ -31,6 +31,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
 
   const parsed = bookingSchema.safeParse({
     propertyId: property.id,
+    roomTypeId: first(query.roomTypeId),
     checkIn: first(query.checkIn),
     checkOut: first(query.checkOut),
     adults: guests.adults,
@@ -52,10 +53,15 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
     ).toString()}`);
   }
 
+  const roomType = await prisma.roomType.findUnique({ where: { id: parsed.data.roomTypeId } });
+  if (!roomType || roomType.propertyId !== property.id) {
+    notFound();
+  }
+
   const checkIn = new Date(parsed.data.checkIn);
   const checkOut = new Date(parsed.data.checkOut);
 
-  const available = await isRangeAvailable(property.id, checkIn, checkOut);
+  const available = await isRoomTypeAvailable(roomType.id, checkIn, checkOut);
   if (!available) {
     const params2 = new URLSearchParams({
       checkIn: parsed.data.checkIn,
@@ -66,12 +72,12 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
       pets: String(parsed.data.pets),
       unavailable: "1",
     });
-    redirect(`/property/${slug}?${params2.toString()}#reserve`);
+    redirect(`/property/${slug}?${params2.toString()}#availability`);
   }
 
   const nights = nightsBetween(checkIn, checkOut);
   const { subtotal, longStayDiscount, cleaningFee, serviceFee, total } = computeBookingTotals(
-    property.pricePerNight,
+    roomType.pricePerNight,
     nights,
   );
   const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
@@ -82,16 +88,19 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
         action={confirmBookingAction}
         propertySlug={property.slug}
         propertyName={property.name}
+        roomTypeName={roomType.name}
         propertyImage={property.images[0]}
         ratingAverage={property.ratingAverage}
         reviewCount={property.reviewCount}
         isSuperhost={property.host.isSuperhost}
         rareFind={rareFind}
+        freeCancellation={roomType.freeCancellation}
         hostName={property.host.name}
         checkInLabel={formatDateShort(checkIn)}
         checkOutLabel={formatDateShort(checkOut)}
         guestsLabel={guestsSummaryLabel(parsed.data)}
         propertyId={property.id}
+        roomTypeId={roomType.id}
         checkIn={parsed.data.checkIn}
         checkOut={parsed.data.checkOut}
         adults={parsed.data.adults}
@@ -99,7 +108,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
         infants={parsed.data.infants}
         pets={parsed.data.pets}
         nights={nights}
-        nightlyRate={property.pricePerNight}
+        nightlyRate={roomType.pricePerNight}
         subtotal={subtotal}
         longStayDiscount={longStayDiscount}
         cleaningFee={cleaningFee}

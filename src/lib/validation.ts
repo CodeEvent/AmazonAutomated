@@ -14,6 +14,7 @@ export const signInSchema = z.object({
 export const bookingSchema = z
   .object({
     propertyId: z.string().min(1),
+    roomTypeId: z.string().min(1),
     checkIn: z.string().min(1, "Select a check-in date"),
     checkOut: z.string().min(1, "Select a check-out date"),
     adults: z.coerce.number().int().min(1).max(32),

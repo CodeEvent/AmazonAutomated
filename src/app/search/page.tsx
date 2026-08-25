@@ -1,12 +1,12 @@
 import type { Prisma } from "@/generated/prisma/client";
 import { prisma } from "@/lib/prisma";
 import { SearchLauncher } from "@/components/search/search-launcher";
-import { PropertyCard } from "@/components/property/property-card";
+import { SearchResultRow } from "@/components/property/search-result-row";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { PropertyType } from "@/generated/prisma/client";
 import { Reveal } from "@/components/motion/reveal";
 import { guestsToSearchParams, occupancy, parseGuestsFromParams } from "@/lib/guests";
-import { availabilityWhere } from "@/lib/availability";
+import { isPropertyAvailable } from "@/lib/availability";
 
 type SearchPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
@@ -45,7 +45,6 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   const where: Prisma.PropertyWhereInput = {
     maxGuests: { gte: occupancy(guests) },
-    ...availabilityWhere(checkInDate, checkOutDate),
   };
 
   if (destination) {
@@ -67,10 +66,19 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
     };
   }
 
-  const properties = await prisma.property.findMany({
+  const candidates = await prisma.property.findMany({
     where,
     orderBy: sort.orderBy,
+    include: { roomTypes: { orderBy: { pricePerNight: "asc" }, take: 1 } },
   });
+
+  let properties = candidates;
+  if (checkInDate && checkOutDate) {
+    const availabilityFlags = await Promise.all(
+      candidates.map((property) => isPropertyAvailable(property.id, checkInDate, checkOutDate)),
+    );
+    properties = candidates.filter((_, index) => availabilityFlags[index]);
+  }
 
   return (
     <div className="mx-auto max-w-[1440px] px-4 py-8 sm:px-8">
@@ -136,12 +144,24 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
           No stays match your search. Try different dates or a broader destination.
         </p>
       ) : (
-        <div className="mt-6 grid grid-cols-1 gap-x-4 gap-y-8 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {properties.map((property, index) => (
-            <Reveal key={property.id} delay={Math.min(index * 0.04, 0.24)}>
-              <PropertyCard property={property} searchQuery={propertyLinkQuery} showDetails />
-            </Reveal>
-          ))}
+        <div className="mx-auto mt-6 flex max-w-[900px] flex-col gap-4">
+          {properties.map((property, index) => {
+            const cheapestRoom = property.roomTypes[0];
+            return (
+              <Reveal key={property.id} delay={Math.min(index * 0.03, 0.24)}>
+                <SearchResultRow
+                  property={{
+                    ...property,
+                    roomTypeName: cheapestRoom?.name ?? "Entire place",
+                    freeCancellation: cheapestRoom?.freeCancellation ?? true,
+                  }}
+                  searchQuery={propertyLinkQuery}
+                  checkIn={checkInDate}
+                  checkOut={checkOutDate}
+                />
+              </Reveal>
+            );
+          })}
         </div>
       )}
     </div>

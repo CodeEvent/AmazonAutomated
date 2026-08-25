@@ -28,7 +28,7 @@ export default async function BookingConfirmationPage({
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { property: true },
+    include: { property: true, roomType: true },
   });
 
   if (!booking || booking.userId !== session.user.id) {
@@ -70,6 +70,9 @@ export default async function BookingConfirmationPage({
           ) : null}
           <div>
             <p className="text-base font-semibold text-ink">{booking.property.name}</p>
+            {booking.roomType.name !== "Entire place" ? (
+              <p className="text-sm text-ink">{booking.roomType.name}</p>
+            ) : null}
             <p className="mt-1 text-sm text-muted">
               {booking.property.city}, {booking.property.country}
             </p>
@@ -143,13 +146,16 @@ export default async function BookingConfirmationPage({
         ) : (
           <>
             <p className="mt-2 text-sm text-muted">
-              This reservation is non-refundable. Since no real payment is processed in this demo,
-              cancelling won&apos;t issue a refund — it simply releases these dates.
+              {booking.roomType.freeCancellation
+                ? "This reservation has free cancellation."
+                : "This reservation is non-refundable."}{" "}
+              Since no real payment is processed in this demo, cancelling won&apos;t issue a
+              refund — it simply releases these dates.
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               {canCancel ? <CancelBookingButton bookingId={booking.id} /> : null}
               <Link
-                href={`/property/${booking.property.slug}#reserve`}
+                href={`/property/${booking.property.slug}#availability`}
                 className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-soft"
               >
                 Contact host

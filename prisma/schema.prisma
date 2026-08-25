@@ -105,8 +105,9 @@ model Property {
   hostId String
   host   Host   @relation(fields: [hostId], references: [id])
 
-  bookings Booking[]
-  reviews  Review[]
+  roomTypes RoomType[]
+  bookings  Booking[]
+  reviews   Review[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -114,6 +115,31 @@ model Property {
   @@index([city])
   @@index([type])
   @@index([hostId])
+}
+
+model RoomType {
+  id          String  @id @default(cuid())
+  propertyId  String
+  property    Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+
+  name             String
+  description      String? @db.Text
+  maxGuests        Int
+  bedConfiguration String
+  sizeSqm          Int?
+  pricePerNight    Int // cents
+  quantity         Int     @default(1) // how many units of this room type exist
+  amenities        String[] @default([])
+  freeCancellation Boolean  @default(true)
+  images           String[] @default([])
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([propertyId, name])
+  @@index([propertyId])
 }
 
 model Host {
@@ -149,6 +175,7 @@ model Booking {
   id          String        @id @default(cuid())
   userId      String
   propertyId  String
+  roomTypeId  String
   checkIn     DateTime
   checkOut    DateTime
   adults      Int           @default(1)
@@ -171,11 +198,13 @@ model Booking {
 
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
 
   createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([propertyId])
+  @@index([roomTypeId])
 }
 
 model GiftCard {

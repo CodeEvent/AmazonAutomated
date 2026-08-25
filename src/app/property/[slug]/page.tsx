@@ -1,9 +1,8 @@
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
-import { ReservationCard } from "@/components/property/reservation-card";
+import { AvailabilityTable } from "@/components/property/availability-table";
 import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
-import { getBlockedRanges } from "@/lib/availability";
 import { parseGuestsFromParams } from "@/lib/guests";
 import { PhotoGrid } from "@/components/property/photo-grid";
 import { HostCard } from "@/components/property/host-card";
@@ -29,6 +28,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     where: { slug },
     include: {
       host: true,
+      roomTypes: { orderBy: { pricePerNight: "asc" } },
       reviews: {
         orderBy: { createdAt: "desc" },
         take: 50,
@@ -41,8 +41,11 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     notFound();
   }
 
-  const [blockedRanges, otherListings, hostReviews] = await Promise.all([
-    getBlockedRanges(property.id),
+  const [propertyBookings, otherListings, hostReviews] = await Promise.all([
+    prisma.booking.findMany({
+      where: { property: { id: property.id }, status: "CONFIRMED" },
+      select: { roomTypeId: true, checkIn: true, checkOut: true },
+    }),
     getOtherListingsByHost(property.hostId, property.id),
     getHostReviews(property.hostId),
   ]);
@@ -52,11 +55,12 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   // Every stay of 2+ nights qualifies for the long-stay discount (see pricing.ts's
   // LONG_STAY_MIN_NIGHTS), which covers virtually every real booking, so this badge is unconditional.
   const extendedStayDiscount = hasLongStayDiscount(2);
+  const cheapestRoomPrice = Math.min(...property.roomTypes.map((rt) => rt.pricePerNight));
 
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
   return (
-    <div className="mx-auto max-w-[1080px] px-4 py-8 pb-24 sm:px-8 lg:pb-8">
+    <div className="mx-auto max-w-[900px] px-4 py-8 pb-24 sm:px-8 lg:pb-8">
       <h1 className="text-[22px] font-medium leading-tight text-ink">{property.name}</h1>
       <p className="mt-1 text-sm text-muted">
         Entire {PROPERTY_TYPE_LABELS[property.type].toLowerCase()} in {property.city}, {property.country}
@@ -101,49 +105,41 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         </div>
       </div>
 
-      <div className="mt-10 grid grid-cols-1 gap-12 lg:grid-cols-[1fr_360px]">
-        <div>
-          <PropertyHighlights highlights={highlights} />
+      <AvailabilityTable
+        propertySlug={property.slug}
+        roomTypes={property.roomTypes}
+        bookings={propertyBookings}
+        maxGuestsOverall={property.maxGuests}
+        defaultCheckIn={first(query.checkIn)}
+        defaultCheckOut={first(query.checkOut)}
+        defaultGuests={guests}
+        unavailable={first(query.unavailable) === "1"}
+      />
 
-          <section className="border-b border-hairline-soft py-8">
-            <h2 className="text-xl font-bold text-ink">About this place</h2>
-            <div className="mt-3 text-base leading-relaxed text-body">
-              {property.description.length > 220 ? (
-                <ExpandableText text={property.description} clampLines={4} />
-              ) : (
-                <p className="whitespace-pre-line">{property.description}</p>
-              )}
-            </div>
-          </section>
+      <PropertyHighlights highlights={highlights} />
 
-          <AmenitiesSection amenities={property.amenities} unavailableAmenities={property.unavailableAmenities} />
-
-          <HostCard host={property.host} otherListings={otherListings} hostReviews={hostReviews} />
-
-          <ReviewsSection
-            reviews={property.reviews}
-            ratingAverage={property.ratingAverage}
-            reviewCount={property.reviewCount}
-          />
+      <section className="border-b border-hairline-soft py-8">
+        <h2 className="text-xl font-bold text-ink">About this place</h2>
+        <div className="mt-3 text-base leading-relaxed text-body">
+          {property.description.length > 220 ? (
+            <ExpandableText text={property.description} clampLines={4} />
+          ) : (
+            <p className="whitespace-pre-line">{property.description}</p>
+          )}
         </div>
+      </section>
 
-        <div id="reserve" className="scroll-mt-24">
-          <ReservationCard
-            propertySlug={property.slug}
-            pricePerNight={property.pricePerNight}
-            maxGuests={property.maxGuests}
-            defaultCheckIn={first(query.checkIn)}
-            defaultCheckOut={first(query.checkOut)}
-            defaultGuests={guests}
-            blockedRanges={blockedRanges}
-            ratingAverage={property.ratingAverage}
-            reviewCount={property.reviewCount}
-            unavailable={first(query.unavailable) === "1"}
-          />
-        </div>
-      </div>
+      <AmenitiesSection amenities={property.amenities} unavailableAmenities={property.unavailableAmenities} />
 
-      <MobileReserveBar pricePerNight={property.pricePerNight} />
+      <HostCard host={property.host} otherListings={otherListings} hostReviews={hostReviews} />
+
+      <ReviewsSection
+        reviews={property.reviews}
+        ratingAverage={property.ratingAverage}
+        reviewCount={property.reviewCount}
+      />
+
+      <MobileReserveBar pricePerNight={cheapestRoomPrice} showFrom={property.roomTypes.length > 1} />
     </div>
   );
 }

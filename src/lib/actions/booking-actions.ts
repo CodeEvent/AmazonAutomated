@@ -7,7 +7,7 @@ import { prisma } from "@/lib/prisma";
 import { bookingSchema } from "@/lib/validation";
 import { computeBookingTotals, generateConfirmationCode } from "@/lib/pricing";
 import { nightsBetween } from "@/lib/format";
-import { isRangeAvailable } from "@/lib/availability";
+import { isRoomTypeAvailable } from "@/lib/availability";
 
 export async function confirmBookingAction(formData: FormData): Promise<void> {
   const session = await auth();
@@ -17,6 +17,7 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
 
   const parsed = bookingSchema.parse({
     propertyId: formData.get("propertyId"),
+    roomTypeId: formData.get("roomTypeId"),
     checkIn: formData.get("checkIn"),
     checkOut: formData.get("checkOut"),
     adults: formData.get("adults"),
@@ -29,15 +30,19 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
     paymentMethod: formData.get("paymentMethod") ?? "card",
   });
 
-  const property = await prisma.property.findUnique({ where: { id: parsed.propertyId } });
-  if (!property) {
-    throw new Error("Property not found");
+  const roomType = await prisma.roomType.findUnique({
+    where: { id: parsed.roomTypeId },
+    include: { property: true },
+  });
+  if (!roomType || roomType.propertyId !== parsed.propertyId) {
+    throw new Error("Room type not found");
   }
+  const property = roomType.property;
 
   const checkIn = new Date(parsed.checkIn);
   const checkOut = new Date(parsed.checkOut);
 
-  const available = await isRangeAvailable(property.id, checkIn, checkOut);
+  const available = await isRoomTypeAvailable(roomType.id, checkIn, checkOut);
   if (!available) {
     const params = new URLSearchParams({
       checkIn: parsed.checkIn,
@@ -48,12 +53,12 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
       pets: String(parsed.pets),
       unavailable: "1",
     });
-    redirect(`/property/${property.slug}?${params.toString()}#reserve`);
+    redirect(`/property/${property.slug}?${params.toString()}#availability`);
   }
 
   const nights = nightsBetween(checkIn, checkOut);
   const { cleaningFee, serviceFee, insuranceFee, total } = computeBookingTotals(
-    property.pricePerNight,
+    roomType.pricePerNight,
     nights,
     parsed.travelInsurance,
   );
@@ -62,6 +67,7 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
     data: {
       userId: session.user.id,
       propertyId: property.id,
+      roomTypeId: roomType.id,
       checkIn,
       checkOut,
       adults: parsed.adults,
@@ -69,7 +75,7 @@ export async function confirmBookingAction(formData: FormData): Promise<void> {
       infants: parsed.infants,
       pets: parsed.pets,
       nights,
-      nightlyRate: property.pricePerNight,
+      nightlyRate: roomType.pricePerNight,
       cleaningFee,
       serviceFee,
       insuranceFee,
