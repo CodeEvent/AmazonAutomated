@@ -279,6 +279,20 @@ const hosts: Array<{
     ratingAverage: 4.93,
     reviewCount: 189,
   },
+  {
+    slug: "rahma-and-ermand",
+    name: "Rahma & Ermand",
+    bio: "We designed and built this villa ourselves above the coves of Ksamil. Ask us for the quietest beaches — most are a short drive and still off the tourist trail.",
+    work: "Architects",
+    livesIn: "Ksamil, Albania",
+    languages: ["Albanian", "Italian", "English"],
+    isSuperhost: true,
+    identityVerified: true,
+    yearsHosting: 3,
+    responseRatePercent: 98,
+    ratingAverage: 4.88,
+    reviewCount: 47,
+  },
 ];
 
 const properties: Array<{
@@ -578,6 +592,29 @@ const properties: Array<{
     ratingAverage: 4.93,
     reviewCount: 189,
     hostSlug: "giulia",
+  },
+  {
+    slug: "rahma-ermand-ksamil",
+    name: "Rahma&Ermand",
+    type: PropertyType.VILLA,
+    description:
+      "A minimalist white villa we designed and built ourselves above the turquoise coves of Ksamil, on the Albanian Riviera, with a private pool that catches the sunset light.",
+    city: "Ksamil",
+    country: "Albania",
+    address: "Rruga e Plazhit 8, Ksamil",
+    latitude: 39.7724,
+    longitude: 20.0089,
+    pricePerNight: 21000,
+    maxGuests: 6,
+    bedrooms: 3,
+    beds: 3,
+    bathrooms: 2,
+    amenities: ["Wifi", "Private pool", "Sea view", "Kitchen", "Air conditioning", "Parking"],
+    unavailableAmenities: ["Elevator"],
+    images: [IMG("photo-1580587771525-78b9dba3b914"), IMG("photo-1613977257363-707ba9348227")],
+    ratingAverage: 4.88,
+    reviewCount: 47,
+    hostSlug: "rahma-and-ermand",
   },
 ];
 
