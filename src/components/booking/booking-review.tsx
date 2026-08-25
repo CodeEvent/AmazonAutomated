@@ -179,21 +179,19 @@ export function BookingReview({
           <button
             type="button"
             onClick={() => setView("message")}
-            className={`flex w-full items-center justify-between border-t border-b py-4 text-left ${
-              messageReady ? "border-hairline-soft" : "border-brand/40 bg-brand/5"
-            }`}
+            className="flex w-full items-center justify-between border-t border-b border-hairline-soft py-4 text-left"
           >
             <div>
               <p className="flex items-center gap-2 text-sm font-semibold text-ink">
                 Message to the host
                 {!messageReady ? (
-                  <span className="rounded-full bg-brand px-2 py-0.5 text-[11px] font-semibold text-canvas">
-                    Required to reserve
+                  <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                    Recommended
                   </span>
                 ) : null}
               </p>
               <p className="mt-0.5 max-w-[380px] truncate text-sm text-muted">
-                {guestMessage || "Tell the host about your trip so they can confirm your stay"}
+                {guestMessage || "Tell the host about your trip so they can confirm your stay faster"}
               </p>
             </div>
             <ChevronIcon />
@@ -222,20 +220,9 @@ export function BookingReview({
         </div>
 
         <div className="mt-6 border-t border-hairline-soft px-4 py-4 sm:px-0">
-          {!messageReady ? (
-            <button
-              type="button"
-              onClick={() => setView("message")}
-              className="mb-3 flex w-full items-center gap-2 rounded-lg bg-brand/10 px-4 py-3 text-left text-sm font-medium text-ink"
-            >
-              <InfoIcon />
-              Write a message to the host to enable Request to book
-            </button>
-          ) : null}
           <button
             type="submit"
-            disabled={!messageReady}
-            className="w-full rounded-lg bg-primary py-3 text-base font-semibold text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="w-full rounded-lg bg-primary py-3 text-base font-semibold text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98]"
           >
             Request to book
           </button>
@@ -597,14 +584,6 @@ function CloseIcon() {
   );
 }
 
-function InfoIcon() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-brand stroke-2">
-      <circle cx="12" cy="12" r="9" />
-      <path d="M12 8h.01M11 12h1v5h1" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 function ChevronIcon() {
   return (
