@@ -2,7 +2,6 @@ import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { PROPERTY_TYPE_LABELS } from "@/lib/property-types";
 import { AvailabilityTable } from "@/components/property/availability-table";
-import { MobileReserveBar } from "@/components/property/mobile-reserve-bar";
 import { parseGuestsFromParams } from "@/lib/guests";
 import { PhotoGrid } from "@/components/property/photo-grid";
 import { HostCard } from "@/components/property/host-card";
@@ -60,7 +59,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
   return (
-    <div className="mx-auto max-w-[900px] px-4 py-8 pb-24 sm:px-8 lg:pb-8">
+    <div className="mx-auto max-w-[1120px] px-4 py-8 pb-32 sm:px-8 lg:pb-8">
       <h1 className="text-[22px] font-medium leading-tight text-ink">{property.name}</h1>
       <p className="mt-1 text-sm text-muted">
         Entire {PROPERTY_TYPE_LABELS[property.type].toLowerCase()} in {property.city}, {property.country}
@@ -107,6 +106,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
 
       <AvailabilityTable
         propertySlug={property.slug}
+        propertyImage={property.images[0]}
         roomTypes={property.roomTypes}
         bookings={propertyBookings}
         maxGuestsOverall={property.maxGuests}
@@ -114,6 +114,8 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         defaultCheckOut={first(query.checkOut)}
         defaultGuests={guests}
         unavailable={first(query.unavailable) === "1"}
+        fromPrice={cheapestRoomPrice}
+        showFromPrice={property.roomTypes.length > 1}
       />
 
       <PropertyHighlights highlights={highlights} />
@@ -138,8 +140,6 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         ratingAverage={property.ratingAverage}
         reviewCount={property.reviewCount}
       />
-
-      <MobileReserveBar pricePerNight={cheapestRoomPrice} showFrom={property.roomTypes.length > 1} />
     </div>
   );
 }
