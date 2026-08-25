@@ -8,6 +8,7 @@ import { Calendar, type CalendarValue } from "@/components/search/calendar";
 import { GuestStepper } from "@/components/search/guest-stepper";
 import { guestsSummaryLabel, guestsToSearchParams, type GuestCounts } from "@/lib/guests";
 import { rangesOverlap } from "@/lib/date-ranges";
+import { stayDiscountPreview } from "@/lib/pricing";
 import type { RoomType } from "@/generated/prisma/client";
 
 type BookingRange = { roomTypeId: string; checkIn: Date; checkOut: Date };
@@ -127,59 +128,83 @@ export function AvailabilityTable({
         ) : null}
       </div>
 
-      <div className="mt-6 overflow-x-auto">
-        <table className="w-full min-w-[640px] border-collapse text-sm">
+      <div className="mt-6 overflow-x-auto rounded-lg border border-hairline">
+        <table className="w-full min-w-[720px] border-collapse text-sm">
           <thead>
-            <tr className="border-b border-hairline text-left text-ink">
-              <th className="w-2/5 py-2 pr-4 font-semibold">Room type</th>
-              <th className="py-2 pr-4 font-semibold">
+            <tr className="bg-ink text-left text-canvas">
+              <th className="w-2/5 py-3 pl-4 pr-4 font-semibold">Room type</th>
+              <th className="py-3 pr-4 font-semibold">
                 {hasDates ? `Price for ${nights} night${nights === 1 ? "" : "s"}` : "Price per night"}
               </th>
-              <th className="py-2 pr-4 font-semibold">Your choices</th>
-              <th className="py-2 font-semibold" />
+              <th className="py-3 pr-4 font-semibold">Your choices</th>
+              <th className="py-3 pr-4 font-semibold" />
             </tr>
           </thead>
           <tbody>
             {rows.map(({ roomType, remaining, available }) => {
+              const preview = hasDates
+                ? stayDiscountPreview(roomType.pricePerNight, nights)
+                : null;
               const total = hasDates ? roomType.pricePerNight * nights : roomType.pricePerNight;
               return (
-                <tr key={roomType.id} className="border-b border-hairline-soft align-top">
-                  <td className="py-4 pr-4">
+                <tr key={roomType.id} className="border-b border-hairline-soft align-top last:border-b-0">
+                  <td className="py-4 pl-4 pr-4">
                     <p className="font-semibold text-ink">{roomType.name}</p>
                     <p className="mt-1 text-muted">
                       {roomType.maxGuests} guest{roomType.maxGuests === 1 ? "" : "s"} · {roomType.bedConfiguration}
                       {roomType.sizeSqm ? ` · ${roomType.sizeSqm} m²` : ""}
                     </p>
                     {roomType.amenities.length > 0 ? (
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        {roomType.amenities.slice(0, 4).map((amenity) => (
-                          <span
-                            key={amenity}
-                            className="rounded-full border border-hairline px-2 py-0.5 text-xs text-muted"
-                          >
-                            {amenity}
+                      <div className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5">
+                        {roomType.amenities.slice(0, 6).map((amenity) => (
+                          <span key={amenity} className="flex items-center gap-1.5 text-xs text-body">
+                            <AmenityIcon />
+                            <span className="truncate">{amenity}</span>
                           </span>
                         ))}
                       </div>
                     ) : null}
                   </td>
-                  <td className="py-4 pr-4 font-semibold text-ink">{formatPrice(total)}</td>
+                  <td className="bg-surface-soft py-4 pr-4 align-top">
+                    {preview ? (
+                      <>
+                        <p className="text-xs text-muted line-through">{formatPrice(preview.original)}</p>
+                        <p className="mt-0.5 flex items-center gap-2">
+                          <span className="text-base font-semibold text-ink">
+                            {formatPrice(preview.discounted)}
+                          </span>
+                          <span className="rounded bg-green-700 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                            {preview.percentOff}% off
+                          </span>
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-base font-semibold text-ink">{formatPrice(total)}</p>
+                    )}
+                    <p className="mt-1 text-xs text-muted">Includes taxes and charges</p>
+                  </td>
                   <td className="py-4 pr-4 text-muted">
                     <p className="flex items-center gap-1.5 text-green-700">
                       <CheckIcon />
-                      {roomType.freeCancellation ? "Free cancellation" : "Non-refundable"}
+                      {roomType.freeCancellation
+                        ? hasDates
+                          ? `Free cancellation before ${format(dateRange.checkIn!, "d MMM")}`
+                          : "Free cancellation"
+                        : "Non-refundable"}
                     </p>
-                    <p className="mt-1 flex items-center gap-1.5">
+                    <p className="mt-1 flex items-center gap-1.5 text-green-700">
                       <CheckIcon /> No prepayment needed
                     </p>
                     {hasDates && available && remaining <= 2 ? (
-                      <p className="mt-1 font-medium text-brand">Only {remaining} left</p>
+                      <p className="mt-1.5 font-medium text-brand">
+                        {remaining === 1 ? "We have 1 left" : `Only ${remaining} left`}
+                      </p>
                     ) : null}
                     {hasDates && !available ? (
-                      <p className="mt-1 font-medium text-muted">No availability</p>
+                      <p className="mt-1.5 font-medium text-muted">No availability</p>
                     ) : null}
                   </td>
-                  <td className="py-4">
+                  <td className="py-4 pr-4">
                     <button
                       type="button"
                       onClick={() => reserve(roomType.id)}
@@ -196,7 +221,9 @@ export function AvailabilityTable({
         </table>
       </div>
 
-      <p className="mt-3 text-center text-xs text-muted sm:text-left">You won&apos;t be charged yet</p>
+      <p className="mt-3 text-center text-xs text-muted sm:text-left">
+        It only takes 2 minutes · You won&apos;t be charged yet
+      </p>
     </section>
   );
 }
@@ -204,6 +231,14 @@ export function AvailabilityTable({
 function CheckIcon() {
   return (
     <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 shrink-0 fill-none stroke-green-700 stroke-2">
+      <path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function AmenityIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className="h-3 w-3 shrink-0 fill-none stroke-muted stroke-2">
       <path d="M3 8.5l3 3 7-7" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   );

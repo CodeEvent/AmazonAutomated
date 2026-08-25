@@ -29,6 +29,24 @@ export function insuranceQuote(nightlyRateCents: number, nights: number): number
   return Math.round(nightlyRateCents * nights * INSURANCE_RATE);
 }
 
+/**
+ * Original vs. long-stay-discounted stay price, for the availability table's
+ * price cell (Booking.com-style strikethrough + "X% off" badge). Returns
+ * null when no discount applies, so callers can render a plain price instead.
+ */
+export function stayDiscountPreview(
+  nightlyRateCents: number,
+  nights: number,
+): { original: number; discounted: number; percentOff: number } | null {
+  if (!hasLongStayDiscount(nights)) return null;
+  const original = nightlyRateCents * nights;
+  const discount = Math.round(original * LONG_STAY_DISCOUNT_RATE);
+  const discounted = original - discount;
+  const percentOff = Math.round((discount / original) * 100);
+  if (percentOff <= 0) return null;
+  return { original, discounted, percentOff };
+}
+
 export function generateConfirmationCode(): string {
   return Math.random().toString(36).slice(2, 8).toUpperCase();
 }
