@@ -6,7 +6,7 @@ import { format } from "date-fns";
 import { formatPrice, nightsBetween } from "@/lib/format";
 import { Calendar, type CalendarValue } from "@/components/search/calendar";
 import { GuestStepper } from "@/components/search/guest-stepper";
-import { guestsToSearchParams, type GuestCounts } from "@/lib/guests";
+import { guestsToSearchParams, occupancy, type GuestCounts } from "@/lib/guests";
 import { rangesOverlap } from "@/lib/date-ranges";
 import { stayDiscountPreview } from "@/lib/pricing";
 import type { RoomType } from "@/generated/prisma/client";
@@ -58,10 +58,13 @@ export function AvailabilityTable({
   const hasDates = Boolean(dateRange.checkIn && dateRange.checkOut);
   const nights = hasDates ? nightsBetween(dateRange.checkIn!, dateRange.checkOut!) : 0;
 
+  const partySize = occupancy(guests);
+
   const rows = useMemo(() => {
     return roomTypes.map((roomType) => {
+      const fitsGuests = roomType.maxGuests >= partySize;
       if (!hasDates) {
-        return { roomType, remaining: roomType.quantity, available: true };
+        return { roomType, remaining: roomType.quantity, fitsGuests, available: fitsGuests };
       }
       const bookedCount = bookings.filter(
         (b) =>
@@ -69,14 +72,14 @@ export function AvailabilityTable({
           rangesOverlap(dateRange.checkIn!, dateRange.checkOut!, b.checkIn, b.checkOut),
       ).length;
       const remaining = roomType.quantity - bookedCount;
-      return { roomType, remaining, available: remaining > 0 };
+      return { roomType, remaining, fitsGuests, available: fitsGuests && remaining > 0 };
     });
-  }, [roomTypes, bookings, hasDates, dateRange]);
+  }, [roomTypes, bookings, hasDates, dateRange, partySize]);
 
-  // Drop the pick if it's no longer available (e.g. the user changed dates) instead
-  // of holding onto a stale selection.
+  // Drop the pick if it's no longer available (e.g. the user changed dates or party size)
+  // instead of holding onto a stale selection.
   const rawSelectedRow = rows.find((r) => r.roomType.id === rawSelectedRoomTypeId) ?? null;
-  const selectedRow = rawSelectedRow && (!hasDates || rawSelectedRow.available) ? rawSelectedRow : null;
+  const selectedRow = rawSelectedRow?.available ? rawSelectedRow : null;
   const selectedRoomTypeId = selectedRow?.roomType.id ?? null;
   const selectedTotal = selectedRow
     ? hasDates
@@ -181,11 +184,10 @@ export function AvailabilityTable({
               </tr>
             </thead>
             <tbody>
-              {rows.map(({ roomType, remaining, available }) => {
+              {rows.map(({ roomType, remaining, fitsGuests, available }) => {
                 const preview = hasDates ? stayDiscountPreview(roomType.pricePerNight, nights) : null;
                 const total = hasDates ? roomType.pricePerNight * nights : roomType.pricePerNight;
                 const isSelected = selectedRoomTypeId === roomType.id;
-                const canSelect = !hasDates || available;
                 return (
                   <tr key={roomType.id} className="border-b border-hairline-soft align-top last:border-b-0">
                     <td className="py-4 pl-4 pr-4">
@@ -233,12 +235,15 @@ export function AvailabilityTable({
                       <p className="mt-1 flex items-center gap-1.5 text-green-700">
                         <CheckIcon /> No prepayment needed
                       </p>
-                      {hasDates && available && remaining <= 5 ? (
+                      {!fitsGuests ? (
+                        <p className="mt-1.5 font-medium text-muted">
+                          Max {roomType.maxGuests} guest{roomType.maxGuests === 1 ? "" : "s"}
+                        </p>
+                      ) : hasDates && available && remaining <= 5 ? (
                         <p className="mt-1.5 flex items-center gap-1.5 font-medium text-brand">
                           <ScarcityDot /> We have {remaining} left
                         </p>
-                      ) : null}
-                      {hasDates && !available ? (
+                      ) : hasDates && !available ? (
                         <p className="mt-1.5 font-medium text-muted">No availability</p>
                       ) : null}
                     </td>
@@ -246,7 +251,7 @@ export function AvailabilityTable({
                       <select
                         value={isSelected ? "1" : "0"}
                         onChange={(event) => toggleRoomType(roomType.id, event.target.value === "1")}
-                        disabled={!canSelect}
+                        disabled={!available}
                         aria-label={`Rooms for ${roomType.name}`}
                         className="w-full rounded-sm border border-hairline px-2 py-1.5 text-sm text-ink disabled:cursor-not-allowed disabled:bg-surface-soft disabled:text-muted"
                       >
@@ -280,11 +285,10 @@ export function AvailabilityTable({
       {/* Mobile: Booking.com app-style swipeable room cards */}
       <div className="mt-6 lg:hidden">
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          {rows.map(({ roomType, remaining, available }) => {
+          {rows.map(({ roomType, remaining, fitsGuests, available }) => {
             const preview = hasDates ? stayDiscountPreview(roomType.pricePerNight, nights) : null;
             const total = hasDates ? roomType.pricePerNight * nights : roomType.pricePerNight;
             const isSelected = selectedRoomTypeId === roomType.id;
-            const canSelect = !hasDates || available;
             const image = roomType.images[0] ?? propertyImage;
             return (
               <div
@@ -345,7 +349,7 @@ export function AvailabilityTable({
                   <button
                     type="button"
                     onClick={() => toggleRoomType(roomType.id, !isSelected)}
-                    disabled={!canSelect}
+                    disabled={!available}
                     className={`mt-3 w-full rounded-lg px-4 py-2 text-sm font-semibold transition-transform duration-150 active:scale-[0.98] disabled:cursor-not-allowed disabled:bg-surface-soft disabled:text-muted ${
                       isSelected
                         ? "border border-brand bg-brand/10 text-brand"
@@ -356,12 +360,15 @@ export function AvailabilityTable({
                   </button>
                 </div>
 
-                {hasDates && available && remaining <= 5 ? (
+                {!fitsGuests ? (
+                  <p className="mt-2 text-xs font-medium text-muted">
+                    Max {roomType.maxGuests} guest{roomType.maxGuests === 1 ? "" : "s"}
+                  </p>
+                ) : hasDates && available && remaining <= 5 ? (
                   <p className="mt-2 flex items-center gap-1.5 text-xs font-medium text-brand">
                     <ScarcityDot /> We have {remaining} left
                   </p>
-                ) : null}
-                {hasDates && !available ? (
+                ) : hasDates && !available ? (
                   <p className="mt-2 text-xs font-medium text-muted">No availability</p>
                 ) : null}
               </div>

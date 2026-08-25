@@ -55,6 +55,9 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
   // LONG_STAY_MIN_NIGHTS), which covers virtually every real booking, so this badge is unconditional.
   const extendedStayDiscount = hasLongStayDiscount(2);
   const cheapestRoomPrice = Math.min(...property.roomTypes.map((rt) => rt.pricePerNight));
+  // A room type can sleep more than the property's own headline maxGuests (e.g. a hotel's
+  // largest suite), so the guest picker's cap has to cover whichever is bigger.
+  const maxGuestsOverall = Math.max(property.maxGuests, ...property.roomTypes.map((rt) => rt.maxGuests));
 
   const first = (v: string | string[] | undefined) => (Array.isArray(v) ? v[0] : v);
 
@@ -109,7 +112,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         propertyImage={property.images[0]}
         roomTypes={property.roomTypes}
         bookings={propertyBookings}
-        maxGuestsOverall={property.maxGuests}
+        maxGuestsOverall={maxGuestsOverall}
         defaultCheckIn={first(query.checkIn)}
         defaultCheckOut={first(query.checkOut)}
         defaultGuests={guests}
