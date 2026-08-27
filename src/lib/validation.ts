@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { PropertyType } from "@/generated/prisma/client";
 
 export const signUpSchema = z.object({
   name: z.string().trim().min(1, "Name is required").max(100),
@@ -30,3 +31,69 @@ export const bookingSchema = z
     message: "Check-out must be after check-in",
     path: ["checkOut"],
   });
+
+/** Splits a comma-separated admin input into a trimmed, non-empty string list. */
+const commaList = z
+  .string()
+  .default("")
+  .transform((value) =>
+    value
+      .split(",")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+
+/** Splits a newline-separated admin input (one URL per line) into a string list. */
+const lineList = z
+  .string()
+  .default("")
+  .transform((value) =>
+    value
+      .split("\n")
+      .map((item) => item.trim())
+      .filter(Boolean),
+  );
+
+export const adminPropertySchema = z.object({
+  slug: z
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Slug is required")
+    .regex(/^[a-z0-9]+(-[a-z0-9]+)*$/, "Use lowercase letters, numbers, and hyphens only"),
+  name: z.string().trim().min(1, "Name is required").max(120),
+  type: z.enum(PropertyType),
+  description: z.string().trim().min(1, "Description is required"),
+  city: z.string().trim().min(1, "City is required"),
+  country: z.string().trim().min(1, "Country is required"),
+  address: z.string().trim().min(1, "Address is required"),
+  latitude: z.coerce.number().min(-90).max(90),
+  longitude: z.coerce.number().min(-180).max(180),
+  pricePerNightDollars: z.coerce.number().positive("Price must be greater than 0"),
+  maxGuests: z.coerce.number().int().min(1).max(64),
+  bedrooms: z.coerce.number().int().min(0).max(64),
+  beds: z.coerce.number().int().min(0).max(64),
+  bathrooms: z.coerce.number().int().min(0).max(64),
+  amenities: commaList,
+  unavailableAmenities: commaList,
+  images: lineList.refine((urls) => urls.length > 0, "Add at least one image URL"),
+  ratingAverage: z.coerce.number().min(0).max(5).default(0),
+  reviewCount: z.coerce.number().int().min(0).default(0),
+  hostId: z.string().min(1, "Choose a host"),
+});
+
+export const adminRoomTypeSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(120),
+  description: z.string().trim().max(2000).default(""),
+  maxGuests: z.coerce.number().int().min(1).max(32),
+  bedConfiguration: z.string().trim().min(1, "Bed configuration is required"),
+  sizeSqm: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.coerce.number().int().positive().optional(),
+  ),
+  pricePerNightDollars: z.coerce.number().positive("Price must be greater than 0"),
+  quantity: z.coerce.number().int().min(1).max(999),
+  amenities: commaList,
+  freeCancellation: z.coerce.boolean().default(true),
+  images: lineList,
+});

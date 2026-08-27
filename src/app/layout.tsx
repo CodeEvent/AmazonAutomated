@@ -2,9 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import { MotionConfig } from "motion/react";
 import "./globals.css";
-import { SiteHeader } from "@/components/layout/site-header";
-import { SiteFooter } from "@/components/layout/site-footer";
-import { MobileTabBar } from "@/components/layout/mobile-tab-bar";
+import { SiteChrome } from "@/components/layout/site-chrome";
 import { auth } from "@/lib/auth";
 
 // Airbnb Cereal VF is a licensed, non-distributable font. Inter is the
@@ -43,10 +41,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
       </head>
       <body className="min-h-full flex flex-col bg-canvas text-ink">
         <MotionConfig reducedMotion="user">
-          <SiteHeader user={session?.user ?? null} />
-          <main className="flex-1 pb-20 md:pb-0">{children}</main>
-          <SiteFooter />
-          <MobileTabBar isAuthenticated={Boolean(session?.user)} />
+          <SiteChrome user={session?.user ?? null} isAuthenticated={Boolean(session?.user)}>
+            {children}
+          </SiteChrome>
         </MotionConfig>
       </body>
     </html>
