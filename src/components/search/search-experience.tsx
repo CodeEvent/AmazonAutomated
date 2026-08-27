@@ -48,6 +48,8 @@ export function SearchExperience({
   }, [dateRange]);
 
   const guestLabel = useMemo(() => guestsSummaryLabel(guests), [guests]);
+  const checkInLabel = dateRange.checkIn ? format(dateRange.checkIn, "EEE, MMM d") : "Add date";
+  const checkOutLabel = dateRange.checkOut ? format(dateRange.checkOut, "EEE, MMM d") : "Add date";
 
   function goToSearch() {
     const params = new URLSearchParams();
@@ -92,22 +94,74 @@ export function SearchExperience({
     }
   }
 
-  const summary = [destination || null, dateRange.checkIn ? dateLabel : null].filter(Boolean).join(" · ");
-
   return (
     <>
-      {/* Mobile: collapsed trigger pill, opens full-screen flow */}
-      <button
-        type="button"
-        onClick={() => {
-          setMobileOpen(true);
-          setMobileStep("where");
-        }}
-        className="flex w-full items-center gap-3 rounded-full border border-hairline bg-canvas px-6 py-4 text-left shadow-card md:hidden"
-      >
-        <SearchIcon className="h-5 w-5 shrink-0 text-ink" />
-        <span className="truncate text-sm text-ink">{summary || "Start your search"}</span>
-      </button>
+      {/* Mobile: always-expanded search card, each row opens the full-screen flow at that step */}
+      <div className="rounded-2xl border border-hairline bg-canvas p-4 shadow-card md:hidden">
+        <button
+          type="button"
+          onClick={() => {
+            setMobileOpen(true);
+            setMobileStep("where");
+          }}
+          className="flex h-14 w-full items-center gap-3 rounded-xl border-2 border-hairline px-4 text-left"
+        >
+          <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
+          <span className="truncate text-base text-ink">
+            {destination || <span className="text-muted">Where would you like to go?</span>}
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMobileOpen(true);
+            setMobileStep("when");
+          }}
+          className="mt-3 flex w-full items-stretch rounded-xl border border-hairline text-left"
+        >
+          <span className="flex flex-1 items-center gap-2.5 px-4 py-3">
+            <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+            <span>
+              <span className="block text-xs text-muted">Check-in</span>
+              <span className="block text-base font-semibold text-ink">{checkInLabel}</span>
+            </span>
+          </span>
+          <span className="w-px shrink-0 bg-hairline" />
+          <span className="flex flex-1 items-center gap-2.5 px-4 py-3">
+            <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+            <span>
+              <span className="block text-xs text-muted">Check-out</span>
+              <span className="block text-base font-semibold text-ink">{checkOutLabel}</span>
+            </span>
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => {
+            setMobileOpen(true);
+            setMobileStep("who");
+          }}
+          className="mt-3 flex w-full items-center gap-2.5 rounded-xl border border-hairline px-4 py-3 text-left"
+        >
+          <PersonIcon className="h-5 w-5 shrink-0 text-muted" />
+          <span className="text-base text-ink">
+            <span className="font-semibold text-brand">1</span> Room,{" "}
+            <span className="font-semibold text-brand">{guests.adults}</span> Adult
+            {guests.adults === 1 ? "" : "s"}, <span className="font-semibold text-brand">{guests.children}</span>{" "}
+            Children
+          </span>
+        </button>
+
+        <button
+          type="button"
+          onClick={goToSearch}
+          className="mt-4 w-full rounded-xl bg-primary py-4 text-base font-bold uppercase tracking-wide text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98]"
+        >
+          Search
+        </button>
+      </div>
 
       {/* Desktop: inline pill with per-segment popovers */}
       <div className="relative mx-auto hidden w-full max-w-3xl md:block">
@@ -408,6 +462,24 @@ function PinIcon() {
     <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4 text-ink" fill="none" stroke="currentColor" strokeWidth={2}>
       <path d="M12 21s-7-6.5-7-11a7 7 0 1114 0c0 4.5-7 11-7 11z" />
       <circle cx="12" cy="10" r="2.5" />
+    </svg>
+  );
+}
+
+function CalendarIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth={2}>
+      <rect x="3" y="5" width="18" height="16" rx="2" />
+      <path d="M3 10h18M8 3v4M16 3v4" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function PersonIcon({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden className={className} fill="none" stroke="currentColor" strokeWidth={2}>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4 21c0-4 4-6 8-6s8 2 8 6" strokeLinecap="round" />
     </svg>
   );
 }
