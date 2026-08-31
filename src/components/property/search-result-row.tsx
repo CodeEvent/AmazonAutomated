@@ -37,7 +37,7 @@ export function SearchResultRow({
   return (
     <Link
       href={href}
-      className="flex flex-col gap-4 rounded-xl border border-hairline-soft p-4 transition-colors hover:border-ink sm:flex-row"
+      className="group flex flex-col gap-4 rounded-xl border border-hairline-soft p-4 transition-colors hover:border-ink hover:shadow-card sm:flex-row"
     >
       <div className="relative h-48 w-full shrink-0 overflow-hidden rounded-lg sm:h-auto sm:w-60">
         {property.images[0] ? (
@@ -54,7 +54,8 @@ export function SearchResultRow({
       <div className="flex flex-1 flex-col justify-between gap-4 sm:flex-row">
         <div className="min-w-0 flex-1">
           <h3 className="text-lg font-semibold text-ink">{property.name}</h3>
-          <p className="mt-0.5 text-sm text-muted">
+          <p className="mt-0.5 flex items-center gap-1 text-sm text-muted">
+            <PinIcon />
             {property.city}, {property.country}
           </p>
           <p className="mt-1 text-sm text-ink">{property.roomTypeName}</p>
@@ -99,12 +100,21 @@ export function SearchResultRow({
             <p className="text-xl font-bold text-ink">{formatPrice(total)}</p>
           </div>
 
-          <span className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-on-primary">
+          <span className="rounded-lg bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-on-primary transition-colors group-hover:bg-primary-active">
             See availability
           </span>
         </div>
       </div>
     </Link>
+  );
+}
+
+function PinIcon() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden className="h-3.5 w-3.5 shrink-0 fill-none stroke-muted stroke-[1.5]">
+      <path d="M8 14.5S13 10 13 6.5a5 5 0 10-10 0C3 10 8 14.5 8 14.5z" strokeLinejoin="round" />
+      <circle cx="8" cy="6.5" r="1.75" />
+    </svg>
   );
 }
 
