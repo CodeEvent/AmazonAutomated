@@ -66,6 +66,17 @@ export function RoomTypeForm({
             className={inputClass}
           />
         </Field>
+        <Field label="Breakfast upgrade — price per night (USD, optional)">
+          <input
+            name="breakfastPricePerNightDollars"
+            type="number"
+            step="0.01"
+            min="0.01"
+            defaultValue={roomType?.breakfastPricePerNight ? roomType.breakfastPricePerNight / 100 : ""}
+            placeholder="Leave blank to not offer breakfast"
+            className={inputClass}
+          />
+        </Field>
         <Field label="Amenities (comma-separated)" full>
           <input
             name="amenities"

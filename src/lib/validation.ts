@@ -96,4 +96,39 @@ export const adminRoomTypeSchema = z.object({
   amenities: commaList,
   freeCancellation: z.coerce.boolean().default(true),
   images: lineList,
+  breakfastPricePerNightDollars: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.coerce.number().positive().optional(),
+  ),
 });
+
+export const adminPromoCodeSchema = z
+  .object({
+    code: z
+      .string()
+      .trim()
+      .toUpperCase()
+      .min(3, "Code must be at least 3 characters")
+      .max(32)
+      .regex(/^[A-Z0-9]+$/, "Use letters and numbers only"),
+    description: z.string().trim().max(200).default(""),
+    discountType: z.enum(["PERCENT", "FIXED"]),
+    discountValue: z.coerce.number().positive("Must be greater than 0"),
+    minNights: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
+    maxRedemptions: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.coerce.number().int().positive().optional(),
+    ),
+    active: z.coerce.boolean().default(true),
+    expiresAt: z.preprocess(
+      (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+      z.coerce.date().optional(),
+    ),
+  })
+  .refine((data) => data.discountType !== "PERCENT" || data.discountValue <= 100, {
+    message: "A percentage discount can't exceed 100",
+    path: ["discountValue"],
+  });

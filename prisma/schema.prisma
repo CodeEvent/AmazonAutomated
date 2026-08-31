@@ -133,6 +133,11 @@ model RoomType {
   freeCancellation Boolean  @default(true)
   images           String[] @default([])
 
+  // Optional breakfast upgrade, priced per night for the whole room (matches
+  // how it's offered at checkout: "Add breakfast for $X" for all guests).
+  // Null means this room type doesn't offer a breakfast upgrade.
+  breakfastPricePerNight Int?
+
   bookings Booking[]
 
   createdAt DateTime @default(now())
@@ -196,6 +201,13 @@ model Booking {
   payInInstallments Boolean @default(false)
   paymentMethod     String  @default("card")
 
+  breakfastAdded Boolean @default(false)
+  breakfastFee   Int     @default(0) // cents, snapshot (breakfastPricePerNight * nights)
+
+  promoCodeId   String?
+  promoCode     PromoCode? @relation(fields: [promoCodeId], references: [id], onDelete: SetNull)
+  promoDiscount Int        @default(0) // cents saved, snapshot
+
   user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
@@ -205,6 +217,30 @@ model Booking {
   @@index([userId])
   @@index([propertyId])
   @@index([roomTypeId])
+  @@index([promoCodeId])
+}
+
+enum PromoDiscountType {
+  PERCENT
+  FIXED
+}
+
+model PromoCode {
+  id              String            @id @default(cuid())
+  code            String            @unique
+  description     String?
+  discountType    PromoDiscountType
+  discountValue   Int // percent (1-100) for PERCENT, cents for FIXED
+  minNights       Int? // optional minimum stay requirement
+  maxRedemptions  Int? // null = unlimited
+  redemptionCount Int               @default(0)
+  active          Boolean           @default(true)
+  expiresAt       DateTime?
+
+  bookings Booking[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model GiftCard {

@@ -83,7 +83,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
   const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
 
   return (
-    <div className="mx-auto max-w-[900px] px-0 py-4 sm:px-8 sm:py-10">
+    <div className="mx-auto max-w-[1100px] px-0 py-4 sm:px-8 sm:py-10">
       <BookingReview
         action={confirmBookingAction}
         propertySlug={property.slug}
@@ -114,6 +114,7 @@ export default async function BookPage({ params, searchParams }: BookPageProps) 
         cleaningFee={cleaningFee}
         serviceFee={serviceFee}
         baseTotal={total}
+        breakfastPricePerNight={roomType.breakfastPricePerNight}
       />
     </div>
   );

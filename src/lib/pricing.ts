@@ -12,6 +12,8 @@ export function computeBookingTotals(
   nightlyRateCents: number,
   nights: number,
   travelInsurance = false,
+  breakfastFeeCents = 0,
+  promoDiscountCents = 0,
 ) {
   const subtotal = nightlyRateCents * nights;
   const longStayDiscount = hasLongStayDiscount(nights)
@@ -20,13 +22,36 @@ export function computeBookingTotals(
   const cleaningFee = CLEANING_FEE_CENTS;
   const serviceFee = Math.round(subtotal * SERVICE_FEE_RATE);
   const insuranceFee = travelInsurance ? Math.round(subtotal * INSURANCE_RATE) : 0;
-  const total = subtotal - longStayDiscount + cleaningFee + serviceFee + insuranceFee;
+  const total = Math.max(
+    0,
+    subtotal -
+      longStayDiscount +
+      cleaningFee +
+      serviceFee +
+      insuranceFee +
+      breakfastFeeCents -
+      promoDiscountCents,
+  );
 
-  return { subtotal, longStayDiscount, cleaningFee, serviceFee, insuranceFee, total };
+  return {
+    subtotal,
+    longStayDiscount,
+    cleaningFee,
+    serviceFee,
+    insuranceFee,
+    breakfastFee: breakfastFeeCents,
+    promoDiscount: promoDiscountCents,
+    total,
+  };
 }
 
 export function insuranceQuote(nightlyRateCents: number, nights: number): number {
   return Math.round(nightlyRateCents * nights * INSURANCE_RATE);
+}
+
+/** Breakfast is priced per night for the whole room (covers all guests). */
+export function breakfastQuote(breakfastPricePerNightCents: number, nights: number): number {
+  return breakfastPricePerNightCents * nights;
 }
 
 /**

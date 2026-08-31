@@ -17,6 +17,7 @@ type RoomTypeSeed = {
   quantity: number;
   amenities: string[];
   freeCancellation: boolean;
+  breakfastPricePerNight?: number;
 };
 
 /**
@@ -35,6 +36,7 @@ const roomTypeOverrides: Record<string, RoomTypeSeed[]> = {
       quantity: 3,
       amenities: ["City view", "Air conditioning", "Free WiFi"],
       freeCancellation: true,
+      breakfastPricePerNight: 2500,
     },
     {
       name: "Harbor View Suite",
@@ -57,6 +59,7 @@ const roomTypeOverrides: Record<string, RoomTypeSeed[]> = {
       quantity: 4,
       amenities: ["Rice field view", "Air conditioning", "Free WiFi"],
       freeCancellation: true,
+      breakfastPricePerNight: 1800,
     },
     {
       name: "Pool Villa Suite",
@@ -757,8 +760,20 @@ async function main() {
     });
   }
 
+  await prisma.promoCode.upsert({
+    where: { code: "WAYFARER10" },
+    update: {},
+    create: {
+      code: "WAYFARER10",
+      description: "10% off your stay",
+      discountType: "PERCENT",
+      discountValue: 10,
+      active: true,
+    },
+  });
+
   console.log(
-    `Seeded ${hosts.length} hosts, ${properties.length} properties, ${reviewSeeds.length} reviews, and demo user (demo@wayfarer.test / password123).`,
+    `Seeded ${hosts.length} hosts, ${properties.length} properties, ${reviewSeeds.length} reviews, a demo promo code (WAYFARER10), and demo user (demo@wayfarer.test / password123).`,
   );
 }
 

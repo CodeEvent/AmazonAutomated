@@ -17,6 +17,9 @@ export default async function AdminDashboardLayout({ children }: { children: Rea
             <Link href="/admin/properties" className="text-sm font-medium text-canvas/80 hover:text-canvas">
               Properties
             </Link>
+            <Link href="/admin/promo-codes" className="text-sm font-medium text-canvas/80 hover:text-canvas">
+              Promo codes
+            </Link>
           </nav>
         </div>
         <form action={adminLogoutAction}>

@@ -131,6 +131,7 @@ function roomTypeFieldsFromForm(formData: FormData) {
     amenities: formData.get("amenities"),
     freeCancellation: formData.get("freeCancellation"),
     images: formData.get("images"),
+    breakfastPricePerNightDollars: formData.get("breakfastPricePerNightDollars"),
   };
 }
 
@@ -145,7 +146,7 @@ export async function createRoomTypeAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, ...data } = parsed.data;
+  const { pricePerNightDollars, breakfastPricePerNightDollars, ...data } = parsed.data;
 
   const property = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!property) {
@@ -154,7 +155,13 @@ export async function createRoomTypeAction(
 
   try {
     await prisma.roomType.create({
-      data: { ...data, propertyId, pricePerNight: Math.round(pricePerNightDollars * 100) },
+      data: {
+        ...data,
+        propertyId,
+        pricePerNight: Math.round(pricePerNightDollars * 100),
+        breakfastPricePerNight:
+          breakfastPricePerNightDollars != null ? Math.round(breakfastPricePerNightDollars * 100) : null,
+      },
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
@@ -180,7 +187,7 @@ export async function updateRoomTypeAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, ...data } = parsed.data;
+  const { pricePerNightDollars, breakfastPricePerNightDollars, ...data } = parsed.data;
 
   const roomType = await prisma.roomType.findUnique({
     where: { id: roomTypeId },
@@ -193,7 +200,12 @@ export async function updateRoomTypeAction(
   try {
     await prisma.roomType.update({
       where: { id: roomTypeId },
-      data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100) },
+      data: {
+        ...data,
+        pricePerNight: Math.round(pricePerNightDollars * 100),
+        breakfastPricePerNight:
+          breakfastPricePerNightDollars != null ? Math.round(breakfastPricePerNightDollars * 100) : null,
+      },
     });
   } catch (error) {
     if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {

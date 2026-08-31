@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { formatPrice } from "@/lib/format";
-import { insuranceQuote } from "@/lib/pricing";
+import { insuranceQuote, breakfastQuote } from "@/lib/pricing";
+import { applyPromoCodeAction } from "@/lib/actions/booking-actions";
+import type { PromoValidationResult } from "@/lib/promo";
 
 type PaymentMethod = "card" | "apple_pay" | "paypal";
 type SubView = "main" | "when-to-pay" | "payment-method" | "message";
@@ -45,6 +47,7 @@ export function BookingReview({
   cleaningFee,
   serviceFee,
   baseTotal,
+  breakfastPricePerNight,
 }: {
   action: (formData: FormData) => void;
   propertySlug: string;
@@ -75,19 +78,46 @@ export function BookingReview({
   cleaningFee: number;
   serviceFee: number;
   baseTotal: number;
+  breakfastPricePerNight: number | null;
 }) {
   const [view, setView] = useState<SubView>("main");
   const [travelInsurance, setTravelInsurance] = useState(false);
   const [payInInstallments, setPayInInstallments] = useState(false);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("card");
   const [guestMessage, setGuestMessage] = useState("");
+  const [breakfastAdded, setBreakfastAdded] = useState(false);
+
+  const [promoInput, setPromoInput] = useState("");
+  const [promoResult, setPromoResult] = useState<PromoValidationResult | null>(null);
+  const [promoPending, startPromoTransition] = useTransition();
 
   const insuranceFee = insuranceQuote(nightlyRate, nights);
-  const total = baseTotal + (travelInsurance ? insuranceFee : 0);
+  const breakfastFee =
+    breakfastAdded && breakfastPricePerNight ? breakfastQuote(breakfastPricePerNight, nights) : 0;
+  const promoDiscount = promoResult?.valid ? promoResult.discountCents : 0;
+  const total = Math.max(
+    0,
+    baseTotal + (travelInsurance ? insuranceFee : 0) + breakfastFee - promoDiscount,
+  );
   const messageReady = guestMessage.trim().length > 0;
+  const appliedPromoCode = promoResult?.valid ? promoInput.trim().toUpperCase() : "";
+
+  function handleApplyPromo() {
+    const code = promoInput.trim();
+    if (!code) return;
+    startPromoTransition(async () => {
+      const result = await applyPromoCodeAction(code, roomTypeId, checkIn, checkOut);
+      setPromoResult(result);
+    });
+  }
+
+  function handleRemovePromo() {
+    setPromoResult(null);
+    setPromoInput("");
+  }
 
   return (
-    <form action={action} className="mx-auto max-w-[560px]">
+    <form action={action} className="mx-auto max-w-[1040px]">
       <input type="hidden" name="propertyId" value={propertyId} />
       <input type="hidden" name="roomTypeId" value={roomTypeId} />
       <input type="hidden" name="checkIn" value={checkIn} />
@@ -100,6 +130,8 @@ export function BookingReview({
       <input type="hidden" name="travelInsurance" value={travelInsurance ? "1" : "0"} />
       <input type="hidden" name="payInInstallments" value={payInInstallments ? "1" : "0"} />
       <input type="hidden" name="paymentMethod" value={paymentMethod} />
+      <input type="hidden" name="breakfastAdded" value={breakfastAdded ? "1" : "0"} />
+      <input type="hidden" name="promoCode" value={appliedPromoCode} />
 
       <Header
         propertySlug={propertySlug}
@@ -107,116 +139,132 @@ export function BookingReview({
       />
 
       <div className={view === "main" ? "block" : "hidden"}>
-        <div className="px-4 sm:px-0">
-          <ListingSummary
-            propertyName={propertyName}
-            roomTypeName={roomTypeName}
-            propertyImage={propertyImage}
-            ratingAverage={ratingAverage}
-            reviewCount={reviewCount}
-            isSuperhost={isSuperhost}
-          />
+        <div className="px-4 sm:px-0 lg:grid lg:grid-cols-[1fr_360px] lg:items-start lg:gap-10">
+          <div className="lg:min-w-0">
+            <ListingSummary
+              propertyName={propertyName}
+              roomTypeName={roomTypeName}
+              propertyImage={propertyImage}
+              ratingAverage={ratingAverage}
+              reviewCount={reviewCount}
+              isSuperhost={isSuperhost}
+            />
 
-          <Row label="Dates" href={`/property/${propertySlug}#availability`}>
-            <p className="text-sm text-ink">
-              {checkInLabel} – {checkOutLabel}
+            <Row label="Dates" href={`/property/${propertySlug}#availability`}>
+              <p className="text-sm text-ink">
+                {checkInLabel} – {checkOutLabel}
+              </p>
+              {rareFind ? <p className="mt-1 text-sm font-medium text-brand">💎 Rare find</p> : null}
+            </Row>
+
+            <Row label="Guests" href={`/property/${propertySlug}#availability`}>
+              <p className="text-sm text-ink">{guestsLabel}</p>
+            </Row>
+
+            <p className="border-t border-hairline-soft py-4 text-sm text-muted">
+              {freeCancellation
+                ? "Free cancellation before check-in."
+                : "This reservation is non-refundable."}{" "}
+              <Link href="/account/legal" className="font-medium text-ink underline">
+                Full policy
+              </Link>
             </p>
-            {rareFind ? <p className="mt-1 text-sm font-medium text-brand">💎 Rare find</p> : null}
-          </Row>
 
-          <Row label="Guests" href={`/property/${propertySlug}#availability`}>
-            <p className="text-sm text-ink">{guestsLabel}</p>
-          </Row>
+            {breakfastPricePerNight ? (
+              <BreakfastUpgrade
+                pricePerNight={breakfastPricePerNight}
+                nights={nights}
+                added={breakfastAdded}
+                onToggle={() => setBreakfastAdded((v) => !v)}
+              />
+            ) : null}
 
-          <a href="#price-details" className="flex items-center justify-between border-t border-hairline-soft py-4">
-            <div>
-              <p className="text-sm font-semibold text-ink">Total price</p>
-              <p className="text-sm text-ink">{formatPrice(total)} USD</p>
+            <button
+              type="button"
+              onClick={() => setView("when-to-pay")}
+              className="flex w-full items-center justify-between border-t border-hairline-soft py-4 text-left"
+            >
+              <div>
+                <p className="text-sm font-semibold text-ink">When you&apos;ll pay</p>
+                <p className="text-sm text-muted">
+                  {payInInstallments
+                    ? `3 payments of ${formatPrice(Math.round(total / 3))}`
+                    : `${formatPrice(total)} now`}
+                </p>
+              </div>
+              <ChevronIcon />
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setView("payment-method")}
+              className="flex w-full items-center justify-between border-t border-hairline-soft py-4 text-left"
+            >
+              <div>
+                <p className="text-sm font-semibold text-ink">Payment method</p>
+                <p className="text-sm text-muted">{PAYMENT_METHOD_LABELS[paymentMethod]}</p>
+              </div>
+              <ChevronIcon />
+            </button>
+            <CardBrandRow />
+
+            <button
+              type="button"
+              onClick={() => setView("message")}
+              className="flex w-full items-center justify-between border-t border-b border-hairline-soft py-4 text-left"
+            >
+              <div>
+                <p className="flex items-center gap-2 text-sm font-semibold text-ink">
+                  Message to the host
+                  {!messageReady ? (
+                    <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
+                      Recommended
+                    </span>
+                  ) : null}
+                </p>
+                <p className="mt-0.5 max-w-[380px] truncate text-sm text-muted">
+                  {guestMessage || "Tell the host about your trip so they can confirm your stay faster"}
+                </p>
+              </div>
+              <ChevronIcon />
+            </button>
+
+            <InsuranceSection
+              insuranceFee={insuranceFee}
+              travelInsurance={travelInsurance}
+              setTravelInsurance={setTravelInsurance}
+            />
+
+            <p className="mt-6 text-sm text-muted">
+              Your booking is confirmed instantly in this demo — no real payment is processed.
+            </p>
+          </div>
+
+          <div className="mt-6 lg:mt-0">
+            <div className="space-y-4 lg:sticky lg:top-6">
+              <PriceDetails
+                nights={nights}
+                nightlyRate={nightlyRate}
+                subtotal={subtotal}
+                longStayDiscount={longStayDiscount}
+                cleaningFee={cleaningFee}
+                serviceFee={serviceFee}
+                insuranceFee={travelInsurance ? insuranceFee : 0}
+                breakfastFee={breakfastFee}
+                promoDiscount={promoDiscount}
+                total={total}
+              />
+              <CouponCode
+                promoInput={promoInput}
+                setPromoInput={setPromoInput}
+                promoResult={promoResult}
+                appliedCode={appliedPromoCode}
+                pending={promoPending}
+                onApply={handleApplyPromo}
+                onRemove={handleRemovePromo}
+              />
             </div>
-            <span className="shrink-0 rounded-lg bg-surface-soft px-3 py-1.5 text-sm font-semibold text-ink">
-              Details
-            </span>
-          </a>
-
-          <p className="border-t border-hairline-soft py-4 text-sm text-muted">
-            {freeCancellation
-              ? "Free cancellation before check-in."
-              : "This reservation is non-refundable."}{" "}
-            <Link href="/account/legal" className="font-medium text-ink underline">
-              Full policy
-            </Link>
-          </p>
-
-          <button
-            type="button"
-            onClick={() => setView("when-to-pay")}
-            className="flex w-full items-center justify-between border-t border-hairline-soft py-4 text-left"
-          >
-            <div>
-              <p className="text-sm font-semibold text-ink">When you&apos;ll pay</p>
-              <p className="text-sm text-muted">
-                {payInInstallments
-                  ? `3 payments of ${formatPrice(Math.round(total / 3))}`
-                  : `${formatPrice(total)} now`}
-              </p>
-            </div>
-            <ChevronIcon />
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setView("payment-method")}
-            className="flex w-full items-center justify-between border-t border-hairline-soft py-4 text-left"
-          >
-            <div>
-              <p className="text-sm font-semibold text-ink">Payment method</p>
-              <p className="text-sm text-muted">{PAYMENT_METHOD_LABELS[paymentMethod]}</p>
-            </div>
-            <ChevronIcon />
-          </button>
-          <CardBrandRow />
-
-          <button
-            type="button"
-            onClick={() => setView("message")}
-            className="flex w-full items-center justify-between border-t border-b border-hairline-soft py-4 text-left"
-          >
-            <div>
-              <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-                Message to the host
-                {!messageReady ? (
-                  <span className="rounded-full border border-brand/30 bg-brand/10 px-2 py-0.5 text-[11px] font-semibold text-brand">
-                    Recommended
-                  </span>
-                ) : null}
-              </p>
-              <p className="mt-0.5 max-w-[380px] truncate text-sm text-muted">
-                {guestMessage || "Tell the host about your trip so they can confirm your stay faster"}
-              </p>
-            </div>
-            <ChevronIcon />
-          </button>
-
-          <InsuranceSection
-            insuranceFee={insuranceFee}
-            travelInsurance={travelInsurance}
-            setTravelInsurance={setTravelInsurance}
-          />
-
-          <PriceDetails
-            nights={nights}
-            nightlyRate={nightlyRate}
-            subtotal={subtotal}
-            longStayDiscount={longStayDiscount}
-            cleaningFee={cleaningFee}
-            serviceFee={serviceFee}
-            insuranceFee={travelInsurance ? insuranceFee : 0}
-            total={total}
-          />
-
-          <p className="mt-4 text-sm text-muted">
-            Your booking is confirmed instantly in this demo — no real payment is processed.
-          </p>
+          </div>
         </div>
 
         <div className="mt-6 border-t border-hairline-soft px-4 py-4 sm:px-0">
@@ -404,6 +452,111 @@ function InsuranceSection({
   );
 }
 
+function BreakfastUpgrade({
+  pricePerNight,
+  nights,
+  added,
+  onToggle,
+}: {
+  pricePerNight: number;
+  nights: number;
+  added: boolean;
+  onToggle: () => void;
+}) {
+  const fee = breakfastQuote(pricePerNight, nights);
+  return (
+    <div className="rounded-xl bg-surface-soft p-5">
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <p className="text-base font-semibold text-ink">Upgrade your stay: add breakfast</p>
+          <p className="text-sm text-muted">
+            {formatPrice(pricePerNight)}/night · {formatPrice(fee)} total for {nights} night
+            {nights === 1 ? "" : "s"}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={onToggle}
+          className={`shrink-0 rounded-lg border px-4 py-2 text-sm font-semibold ${
+            added ? "border-ink bg-ink text-canvas" : "border-hairline-soft bg-canvas text-ink"
+          }`}
+        >
+          {added ? "Added" : "Add"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function CouponCode({
+  promoInput,
+  setPromoInput,
+  promoResult,
+  appliedCode,
+  pending,
+  onApply,
+  onRemove,
+}: {
+  promoInput: string;
+  setPromoInput: (v: string) => void;
+  promoResult: PromoValidationResult | null;
+  appliedCode: string;
+  pending: boolean;
+  onApply: () => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-xl border border-hairline-soft p-5">
+      <h2 className="text-base font-bold text-ink">Coupon code</h2>
+      {promoResult?.valid ? (
+        <div className="mt-3 flex items-start justify-between gap-3 rounded-lg bg-green-50 px-3 py-2.5">
+          <div>
+            <p className="text-sm font-semibold text-green-800">{appliedCode} applied</p>
+            {promoResult.description ? (
+              <p className="mt-0.5 text-xs text-green-700">{promoResult.description}</p>
+            ) : null}
+          </div>
+          <button
+            type="button"
+            onClick={onRemove}
+            className="shrink-0 text-xs font-semibold text-green-800 underline"
+          >
+            Remove
+          </button>
+        </div>
+      ) : (
+        <div className="mt-3">
+          <div className="flex gap-2">
+            <input
+              value={promoInput}
+              onChange={(event) => setPromoInput(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") {
+                  event.preventDefault();
+                  onApply();
+                }
+              }}
+              placeholder="Enter code"
+              className="h-10 flex-1 rounded-sm border border-hairline px-3 text-sm uppercase text-ink placeholder:normal-case placeholder:text-muted focus:border-ink focus:outline-none"
+            />
+            <button
+              type="button"
+              onClick={onApply}
+              disabled={pending || !promoInput.trim()}
+              className="shrink-0 rounded-sm border border-ink px-4 text-sm font-semibold text-ink hover:bg-surface-soft disabled:opacity-50"
+            >
+              {pending ? "Checking…" : "Apply"}
+            </button>
+          </div>
+          {promoResult && !promoResult.valid ? (
+            <p className="mt-2 text-xs text-primary-error-text">{promoResult.error}</p>
+          ) : null}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function PriceDetails({
   nights,
   nightlyRate,
@@ -412,6 +565,8 @@ function PriceDetails({
   cleaningFee,
   serviceFee,
   insuranceFee,
+  breakfastFee,
+  promoDiscount,
   total,
 }: {
   nights: number;
@@ -421,11 +576,13 @@ function PriceDetails({
   cleaningFee: number;
   serviceFee: number;
   insuranceFee: number;
+  breakfastFee: number;
+  promoDiscount: number;
   total: number;
 }) {
   return (
-    <div id="price-details" className="mt-6 scroll-mt-24 border-t border-hairline-soft pt-6">
-      <h2 className="text-lg font-bold text-ink">Price details</h2>
+    <div id="price-details" className="scroll-mt-24 rounded-xl border border-hairline-soft p-5">
+      <h2 className="text-base font-bold text-ink">Price details</h2>
       <div className="mt-4 space-y-2 text-sm text-ink">
         <div className="flex justify-between">
           <span>
@@ -437,6 +594,12 @@ function PriceDetails({
           <div className="flex justify-between text-green-700">
             <span>Long stay discount</span>
             <span>-{formatPrice(longStayDiscount)}</span>
+          </div>
+        ) : null}
+        {breakfastFee > 0 ? (
+          <div className="flex justify-between">
+            <span>Breakfast upgrade</span>
+            <span>{formatPrice(breakfastFee)}</span>
           </div>
         ) : null}
         <div className="flex justify-between">
@@ -451,6 +614,12 @@ function PriceDetails({
           <div className="flex justify-between">
             <span>Travel insurance</span>
             <span>{formatPrice(insuranceFee)}</span>
+          </div>
+        ) : null}
+        {promoDiscount > 0 ? (
+          <div className="flex justify-between text-green-700">
+            <span>Promo discount</span>
+            <span>-{formatPrice(promoDiscount)}</span>
           </div>
         ) : null}
       </div>
@@ -584,7 +753,6 @@ function CloseIcon() {
   );
 }
 
-
 function ChevronIcon() {
   return (
     <svg viewBox="0 0 24 24" aria-hidden className="h-5 w-5 shrink-0 fill-none stroke-ink stroke-2">
@@ -592,4 +760,3 @@ function ChevronIcon() {
     </svg>
   );
 }
-
