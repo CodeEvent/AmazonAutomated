@@ -272,11 +272,7 @@ export function SearchExperience({
                   <PersonIcon className="h-5 w-5 shrink-0 text-muted" />
                   <span>
                     <span className="block text-xs text-muted">Guests</span>
-                    <span className="block truncate text-sm font-semibold text-ink">
-                      {guests.adults > 1 || guests.children || guests.infants || guests.pets
-                        ? guestLabel
-                        : "Add guests"}
-                    </span>
+                    <span className="block truncate text-sm font-semibold text-ink">{guestLabel}</span>
                   </span>
                 </button>
               </div>
@@ -328,9 +324,7 @@ export function SearchExperience({
             />
             <DesktopSegment
               label="Who"
-              value={
-                guests.adults > 1 || guests.children || guests.infants || guests.pets ? guestLabel : "Add guests"
-              }
+              value={guestLabel}
               active={desktopStep === "who"}
               onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
               className="flex-1"
