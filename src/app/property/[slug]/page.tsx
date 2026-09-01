@@ -45,15 +45,27 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     notFound();
   }
 
-  const [propertyBookings, otherListings, hostReviews, destinations] = await Promise.all([
+  const [propertyBookings, blockedDates, otherListings, hostReviews, destinations] = await Promise.all([
     prisma.booking.findMany({
       where: { property: { id: property.id }, status: "CONFIRMED" },
       select: { roomTypeId: true, checkIn: true, checkOut: true },
+    }),
+    prisma.blockedDate.findMany({
+      where: { roomType: { propertyId: property.id } },
+      select: { roomTypeId: true, startDate: true, endDate: true },
     }),
     getOtherListingsByHost(property.hostId, property.id),
     getHostReviews(property.hostId),
     getDestinationTiles(8),
   ]);
+  // The availability table just needs "who occupies which dates" — admin-managed
+  // blocked ranges count against a room type's capacity exactly like a real
+  // booking, so they're merged into the same shape rather than modifying the
+  // (unchanged) AvailabilityTable component itself.
+  const occupiedRanges = [
+    ...propertyBookings,
+    ...blockedDates.map((b) => ({ roomTypeId: b.roomTypeId, checkIn: b.startDate, checkOut: b.endDate })),
+  ];
   const guests = parseGuestsFromParams(query);
   const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
   const highlights = getPropertyHighlights(property);
@@ -117,7 +129,7 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         propertySlug={property.slug}
         propertyImage={property.images[0]}
         roomTypes={property.roomTypes}
-        bookings={propertyBookings}
+        bookings={occupiedRanges}
         maxGuestsOverall={maxGuestsOverall}
         defaultCheckIn={first(query.checkIn)}
         defaultCheckOut={first(query.checkOut)}

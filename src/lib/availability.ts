@@ -9,15 +9,30 @@ export type RoomTypeAvailability = RoomType & {
   available: boolean;
 };
 
-async function countOverlappingBookings(roomTypeId: string, checkIn: Date, checkOut: Date): Promise<number> {
-  return prisma.booking.count({
-    where: {
-      roomTypeId,
-      status: "CONFIRMED",
-      checkIn: { lt: checkOut },
-      checkOut: { gt: checkIn },
-    },
-  });
+/**
+ * How many of a room type's units are unavailable for a date range — real
+ * confirmed bookings plus admin-managed blocked-date ranges (maintenance,
+ * owner use, etc.), which count against quantity exactly like a booking.
+ */
+async function countOccupiedUnits(roomTypeId: string, checkIn: Date, checkOut: Date): Promise<number> {
+  const [bookedCount, blockedCount] = await Promise.all([
+    prisma.booking.count({
+      where: {
+        roomTypeId,
+        status: "CONFIRMED",
+        checkIn: { lt: checkOut },
+        checkOut: { gt: checkIn },
+      },
+    }),
+    prisma.blockedDate.count({
+      where: {
+        roomTypeId,
+        startDate: { lt: checkOut },
+        endDate: { gt: checkIn },
+      },
+    }),
+  ]);
+  return bookedCount + blockedCount;
 }
 
 /**
@@ -46,7 +61,7 @@ export async function getRoomTypesWithAvailability(
 
   return Promise.all(
     roomTypes.map(async (roomType) => {
-      const bookedCount = await countOverlappingBookings(roomType.id, checkIn, checkOut);
+      const bookedCount = await countOccupiedUnits(roomType.id, checkIn, checkOut);
       const remaining = roomType.quantity - bookedCount;
       return { ...roomType, bookedCount, remaining, available: remaining > 0 };
     }),
@@ -60,8 +75,8 @@ export async function isRoomTypeAvailable(
 ): Promise<boolean> {
   const roomType = await prisma.roomType.findUnique({ where: { id: roomTypeId } });
   if (!roomType) return false;
-  const bookedCount = await countOverlappingBookings(roomTypeId, checkIn, checkOut);
-  return bookedCount < roomType.quantity;
+  const occupiedCount = await countOccupiedUnits(roomTypeId, checkIn, checkOut);
+  return occupiedCount < roomType.quantity;
 }
 
 /** True if at least one of the property's room types still has capacity for these dates. */

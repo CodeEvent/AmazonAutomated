@@ -106,6 +106,17 @@ export const adminRoomTypeSchema = z.object({
   ),
 });
 
+export const adminBlockedDateSchema = z
+  .object({
+    startDate: z.string().min(1, "Start date is required"),
+    endDate: z.string().min(1, "End date is required"),
+    reason: z.string().trim().max(200).default(""),
+  })
+  .refine((data) => new Date(data.endDate) > new Date(data.startDate), {
+    message: "End date must be after start date",
+    path: ["endDate"],
+  });
+
 export const adminPromoCodeSchema = z
   .object({
     code: z

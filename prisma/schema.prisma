@@ -139,13 +139,33 @@ model RoomType {
   // Null means this room type doesn't offer a breakfast upgrade.
   breakfastPricePerNight Int?
 
-  bookings Booking[]
+  bookings     Booking[]
+  blockedDates BlockedDate[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@unique([propertyId, name])
   @@index([propertyId])
+}
+
+/**
+ * A host/admin-managed date range taken out of a room type's rentable pool
+ * (maintenance, owner use, etc.). Counts against quantity exactly like a real
+ * Booking — this is real availability gating, not decorative.
+ */
+model BlockedDate {
+  id         String   @id @default(cuid())
+  roomTypeId String
+  roomType   RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Cascade)
+
+  startDate DateTime
+  endDate   DateTime
+  reason    String?
+
+  createdAt DateTime @default(now())
+
+  @@index([roomTypeId])
 }
 
 model Host {
