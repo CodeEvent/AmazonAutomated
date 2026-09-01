@@ -116,6 +116,16 @@ export function SearchExperience({
     }
   }
 
+  function renderStepContent(step: Step) {
+    if (step === "where") {
+      return <DestinationList destinations={destinations} query={destination} onPick={handleDesktopDestinationPick} />;
+    }
+    if (step === "when") {
+      return <Calendar months={2} value={dateRange} onChange={handleDesktopDateChange} />;
+    }
+    return <GuestStepper value={guests} onChange={setGuests} />;
+  }
+
   return (
     <>
       {/* Mobile: always-expanded search card, each row opens the full-screen flow at that step */}
@@ -207,60 +217,79 @@ export function SearchExperience({
           <div className="rounded-2xl bg-canvas p-6 shadow-card">
             <HeroTabsRow activeTab={heroTab} onSelect={selectHeroTab} className="mb-5" />
 
-            <button
-              type="button"
-              onClick={() => setDesktopStep(desktopStep === "where" ? null : "where")}
-              className={clsx(
-                "flex h-14 w-full items-center gap-3 rounded-lg border-2 px-4 text-left transition-colors",
-                desktopStep === "where" ? "border-ink" : "border-hairline hover:border-ink",
-              )}
-            >
-              <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
-              <span className="truncate text-base text-ink">
-                {destination || <span className="text-muted">Search destinations</span>}
-              </span>
-            </button>
+            <div className="relative">
+              <button
+                type="button"
+                onClick={() => setDesktopStep(desktopStep === "where" ? null : "where")}
+                className={clsx(
+                  "flex h-14 w-full items-center gap-3 rounded-lg border-2 px-4 text-left transition-colors",
+                  desktopStep === "where" ? "border-ink" : "border-hairline hover:border-ink",
+                )}
+              >
+                <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
+                <span className="truncate text-base text-ink">
+                  {destination || <span className="text-muted">Search destinations</span>}
+                </span>
+              </button>
+              {desktopStep === "where" ? (
+                <div className="absolute top-full z-50 mt-3 w-full rounded-md border border-hairline bg-canvas p-6 shadow-card">
+                  {renderStepContent("where")}
+                </div>
+              ) : null}
+            </div>
 
-            <div className="mt-3 flex items-stretch rounded-lg border border-hairline">
-              <button
-                type="button"
-                onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
-                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
-              >
-                <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
-                <span>
-                  <span className="block text-xs text-muted">Check-in</span>
-                  <span className="block text-sm font-semibold text-ink">{checkInLabel}</span>
-                </span>
-              </button>
-              <span className="w-px shrink-0 bg-hairline" />
-              <button
-                type="button"
-                onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
-                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
-              >
-                <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
-                <span>
-                  <span className="block text-xs text-muted">Check-out</span>
-                  <span className="block text-sm font-semibold text-ink">{checkOutLabel}</span>
-                </span>
-              </button>
-              <span className="w-px shrink-0 bg-hairline" />
-              <button
-                type="button"
-                onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
-                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
-              >
-                <PersonIcon className="h-5 w-5 shrink-0 text-muted" />
-                <span>
-                  <span className="block text-xs text-muted">Guests</span>
-                  <span className="block truncate text-sm font-semibold text-ink">
-                    {guests.adults > 1 || guests.children || guests.infants || guests.pets
-                      ? guestLabel
-                      : "Add guests"}
+            <div className="relative mt-3">
+              <div className="flex items-stretch rounded-lg border border-hairline">
+                <button
+                  type="button"
+                  onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
+                  className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+                >
+                  <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+                  <span>
+                    <span className="block text-xs text-muted">Check-in</span>
+                    <span className="block text-sm font-semibold text-ink">{checkInLabel}</span>
                   </span>
-                </span>
-              </button>
+                </button>
+                <span className="w-px shrink-0 bg-hairline" />
+                <button
+                  type="button"
+                  onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
+                  className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+                >
+                  <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+                  <span>
+                    <span className="block text-xs text-muted">Check-out</span>
+                    <span className="block text-sm font-semibold text-ink">{checkOutLabel}</span>
+                  </span>
+                </button>
+                <span className="w-px shrink-0 bg-hairline" />
+                <button
+                  type="button"
+                  onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
+                  className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+                >
+                  <PersonIcon className="h-5 w-5 shrink-0 text-muted" />
+                  <span>
+                    <span className="block text-xs text-muted">Guests</span>
+                    <span className="block truncate text-sm font-semibold text-ink">
+                      {guests.adults > 1 || guests.children || guests.infants || guests.pets
+                        ? guestLabel
+                        : "Add guests"}
+                    </span>
+                  </span>
+                </button>
+              </div>
+              {desktopStep === "when" ? (
+                <div className="absolute top-full left-1/2 z-50 mt-3 w-[640px] -translate-x-1/2 rounded-md border border-hairline bg-canvas p-6 shadow-card">
+                  {renderStepContent("when")}
+                </div>
+              ) : null}
+              {desktopStep === "who" ? (
+                <div className="absolute top-full right-0 z-50 mt-3 w-96 rounded-md border border-hairline bg-canvas p-6 shadow-card">
+                  {renderStepContent("who")}
+                </div>
+              ) : null}
             </div>
 
             <label className="mt-4 flex items-center gap-2 text-sm text-ink">
@@ -322,34 +351,25 @@ export function SearchExperience({
         )}
 
         {desktopStep ? (
-          <>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={() => setDesktopStep(null)}
-              className="fixed inset-0 z-40 cursor-default"
-            />
-            <div
-              className={clsx(
-                "absolute top-full z-50 mt-3 rounded-md border border-hairline bg-canvas p-6 shadow-card",
-                desktopStep === "where" && "left-0 w-96",
-                desktopStep === "when" && "left-1/2 w-[640px] -translate-x-1/2",
-                desktopStep === "who" && "right-0 w-96",
-              )}
-            >
-              {desktopStep === "where" ? (
-                <DestinationList
-                  destinations={destinations}
-                  query={destination}
-                  onPick={handleDesktopDestinationPick}
-                />
-              ) : null}
-              {desktopStep === "when" ? (
-                <Calendar months={2} value={dateRange} onChange={handleDesktopDateChange} />
-              ) : null}
-              {desktopStep === "who" ? <GuestStepper value={guests} onChange={setGuests} /> : null}
-            </div>
-          </>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={() => setDesktopStep(null)}
+            className="fixed inset-0 z-40 cursor-default"
+          />
+        ) : null}
+
+        {desktopStep && variant === "compact" ? (
+          <div
+            className={clsx(
+              "absolute top-full z-50 mt-3 rounded-md border border-hairline bg-canvas p-6 shadow-card",
+              desktopStep === "where" && "left-0 w-96",
+              desktopStep === "when" && "left-1/2 w-[640px] -translate-x-1/2",
+              desktopStep === "who" && "right-0 w-96",
+            )}
+          >
+            {renderStepContent(desktopStep)}
+          </div>
         ) : null}
       </div>
 
