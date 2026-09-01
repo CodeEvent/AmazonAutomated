@@ -11,12 +11,6 @@ import { getHomepageRails } from "@/lib/homepage-sections";
 
 export const dynamic = "force-dynamic";
 
-const HERO_TABS: Array<{ label: string; active?: boolean; comingSoon?: boolean }> = [
-  { label: "Stays", active: true },
-  { label: "Flights", comingSoon: true },
-  { label: "Car rentals", comingSoon: true },
-];
-
 export default async function HomePage() {
   const [destinations, rails] = await Promise.all([
     getDestinationTiles(8),
@@ -38,41 +32,25 @@ export default async function HomePage() {
 
   return (
     <div>
-      <section className="relative overflow-hidden px-4 py-16 sm:px-8">
-        <Image
-          src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=80"
-          alt=""
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/45 to-ink/70" />
+      <section className="relative px-4 py-16 sm:px-8">
+        {/* Photo + overlay live in their own clipped layer so this section's
+            search dropdowns (which intentionally overflow below it) are never
+            clipped by the same overflow-hidden used to crop the photo. */}
+        <div className="absolute inset-0 overflow-hidden">
+          <Image
+            src="https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=2000&q=80"
+            alt=""
+            fill
+            priority
+            sizes="100vw"
+            className="object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-ink/70 via-ink/45 to-ink/70" />
+        </div>
 
         <div className="relative mx-auto max-w-[1440px]">
           <Reveal y={12}>
-            <div className="mx-auto flex w-fit items-center gap-1 rounded-full bg-canvas/15 p-1 backdrop-blur-sm">
-              {HERO_TABS.map((tab) => (
-                <span
-                  key={tab.label}
-                  title={tab.comingSoon ? "Coming soon" : undefined}
-                  className={
-                    tab.active
-                      ? "flex items-center gap-1.5 rounded-full bg-canvas px-4 py-1.5 text-sm font-semibold text-ink"
-                      : "flex items-center gap-1.5 rounded-full px-4 py-1.5 text-sm font-semibold text-canvas/75"
-                  }
-                >
-                  {tab.label}
-                  {tab.comingSoon ? (
-                    <span className="rounded-full border border-canvas/40 px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-canvas/80">
-                      New
-                    </span>
-                  ) : null}
-                </span>
-              ))}
-            </div>
-
-            <h1 className="mt-6 text-center text-[28px] font-bold leading-tight text-canvas drop-shadow-sm">
+            <h1 className="text-center text-[28px] font-bold leading-tight text-canvas drop-shadow-sm">
               Find your next stay
             </h1>
             <p className="mt-2 text-center text-base text-canvas/90 drop-shadow-sm">
@@ -80,7 +58,7 @@ export default async function HomePage() {
             </p>
           </Reveal>
           <Reveal delay={0.1} className="mt-8">
-            <SearchLauncher />
+            <SearchLauncher variant="hero" />
           </Reveal>
         </div>
       </section>

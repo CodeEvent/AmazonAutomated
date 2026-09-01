@@ -30,6 +30,7 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
   const checkOut = first(params.checkOut) ?? "";
   const guests = parseGuestsFromParams(params);
   const type = first(params.type);
+  const entirePlaceOnly = first(params.entirePlace) === "1";
   const minPrice = Number(first(params.minPrice) ?? "") || undefined;
   const maxPrice = Number(first(params.maxPrice) ?? "") || undefined;
   const sortKey = (first(params.sort) as keyof typeof SORT_OPTIONS) ?? "recommended";
@@ -57,6 +58,14 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
 
   if (type && type in PropertyType) {
     where.type = type as PropertyType;
+  }
+
+  if (entirePlaceOnly) {
+    // "Entire homes and apartments": properties whose only room type is the
+    // auto-derived single-unit "Entire place" row, i.e. not one of the
+    // multi-room-type hotels/resorts (which offer named room categories like
+    // "Classic Room" or "Harbor View Suite").
+    where.roomTypes = { every: { name: "Entire place" }, some: {} };
   }
 
   if (minPrice || maxPrice) {
@@ -107,6 +116,12 @@ export default async function SearchPage({ searchParams }: SearchPageProps) {
             overrides={{ type: value }}
           />
         ))}
+        <FilterPill
+          label="Entire homes & apartments"
+          active={entirePlaceOnly}
+          params={params}
+          overrides={{ entirePlace: entirePlaceOnly ? undefined : "1" }}
+        />
       </div>
 
       <div className="mt-6 flex flex-wrap items-center justify-between gap-3">

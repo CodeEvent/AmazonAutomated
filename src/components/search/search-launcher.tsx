@@ -7,14 +7,19 @@ export async function SearchLauncher({
   defaultCheckIn,
   defaultCheckOut,
   searchParams,
+  variant = "compact",
 }: {
   defaultDestination?: string;
   defaultCheckIn?: string;
   defaultCheckOut?: string;
   searchParams?: Record<string, string | string[] | undefined>;
+  variant?: "compact" | "hero";
 }) {
   const destinations = await getTrendingDestinations(8);
   const guests = parseGuestsFromParams(searchParams ?? {});
+  const rawEntirePlace = searchParams?.entirePlace;
+  const defaultEntirePlaceOnly =
+    (Array.isArray(rawEntirePlace) ? rawEntirePlace[0] : rawEntirePlace) === "1";
 
   return (
     <SearchExperience
@@ -23,6 +28,8 @@ export async function SearchLauncher({
       defaultCheckIn={defaultCheckIn}
       defaultCheckOut={defaultCheckOut}
       defaultGuests={guests}
+      defaultEntirePlaceOnly={defaultEntirePlaceOnly}
+      variant={variant}
     />
   );
 }

@@ -13,18 +13,30 @@ import type { TrendingDestination } from "@/lib/trending-destinations";
 type Step = "where" | "when" | "who";
 const STEPS: Step[] = ["where", "when", "who"];
 
+type HeroTabKey = "hotels" | "homesApts";
+const HERO_TABS: Array<{ key: HeroTabKey; label: string } | { key: string; label: string; comingSoon: true }> = [
+  { key: "hotels", label: "Hotels" },
+  { key: "homesApts", label: "Homes & Apts" },
+  { key: "longStays", label: "Long stays", comingSoon: true },
+  { key: "airportTransfer", label: "Airport transfer", comingSoon: true },
+];
+
 export function SearchExperience({
   destinations,
   defaultDestination,
   defaultCheckIn,
   defaultCheckOut,
   defaultGuests,
+  defaultEntirePlaceOnly = false,
+  variant = "compact",
 }: {
   destinations: TrendingDestination[];
   defaultDestination?: string;
   defaultCheckIn?: string;
   defaultCheckOut?: string;
   defaultGuests: GuestCounts;
+  defaultEntirePlaceOnly?: boolean;
+  variant?: "compact" | "hero";
 }) {
   const router = useRouter();
 
@@ -34,10 +46,17 @@ export function SearchExperience({
     checkOut: defaultCheckOut ? new Date(defaultCheckOut) : null,
   });
   const [guests, setGuests] = useState<GuestCounts>(defaultGuests);
+  const [entirePlaceOnly, setEntirePlaceOnly] = useState(defaultEntirePlaceOnly);
+  const [heroTab, setHeroTab] = useState<HeroTabKey>(defaultEntirePlaceOnly ? "homesApts" : "hotels");
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [mobileStep, setMobileStep] = useState<Step>("where");
   const [desktopStep, setDesktopStep] = useState<Step | null>(null);
+
+  function selectHeroTab(tab: HeroTabKey) {
+    setHeroTab(tab);
+    setEntirePlaceOnly(tab === "homesApts");
+  }
 
   const dateLabel = useMemo(() => {
     if (dateRange.checkIn && dateRange.checkOut) {
@@ -59,6 +78,7 @@ export function SearchExperience({
     for (const [key, value] of Object.entries(guestsToSearchParams(guests))) {
       params.set(key, value);
     }
+    if (entirePlaceOnly) params.set("entirePlace", "1");
     setMobileOpen(false);
     setDesktopStep(null);
     router.push(`/search?${params.toString()}`);
@@ -68,6 +88,8 @@ export function SearchExperience({
     setDestination("");
     setDateRange({ checkIn: null, checkOut: null });
     setGuests({ adults: 1, children: 0, infants: 0, pets: 0 });
+    setEntirePlaceOnly(false);
+    setHeroTab("hotels");
   }
 
   function handleMobileDestinationPick(city: string) {
@@ -98,6 +120,9 @@ export function SearchExperience({
     <>
       {/* Mobile: always-expanded search card, each row opens the full-screen flow at that step */}
       <div className="rounded-2xl border border-hairline bg-canvas p-4 shadow-card md:hidden">
+        {variant === "hero" ? (
+          <HeroTabsRow activeTab={heroTab} onSelect={selectHeroTab} className="mb-3" />
+        ) : null}
         <button
           type="button"
           onClick={() => {
@@ -154,6 +179,18 @@ export function SearchExperience({
           </span>
         </button>
 
+        {variant === "hero" ? (
+          <label className="mt-4 flex items-center gap-2 text-sm text-ink">
+            <input
+              type="checkbox"
+              checked={entirePlaceOnly}
+              onChange={(e) => setEntirePlaceOnly(e.target.checked)}
+              className="h-4 w-4 rounded-sm border-hairline accent-primary"
+            />
+            Show me only entire homes and apartments
+          </label>
+        ) : null}
+
         <button
           type="button"
           onClick={goToSearch}
@@ -163,43 +200,126 @@ export function SearchExperience({
         </button>
       </div>
 
-      {/* Desktop: inline pill with per-segment popovers */}
+      {/* Desktop: compact variant is an inline pill with per-segment popovers;
+          hero variant is a stacked card matching the Booking.com-style reference. */}
       <div className="relative mx-auto hidden w-full max-w-3xl md:block">
-        <div className="flex items-center rounded-full border border-hairline bg-canvas shadow-card">
-          <DesktopSegment
-            label="Where"
-            value={destination || "Search destinations"}
-            active={desktopStep === "where"}
-            onClick={() => setDesktopStep(desktopStep === "where" ? null : "where")}
-            className="flex-1 border-r border-hairline"
-          />
-          <DesktopSegment
-            label="When"
-            value={dateLabel}
-            active={desktopStep === "when"}
-            onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
-            className="flex-1 border-r border-hairline"
-          />
-          <DesktopSegment
-            label="Who"
-            value={guests.adults > 1 || guests.children || guests.infants || guests.pets ? guestLabel : "Add guests"}
-            active={desktopStep === "who"}
-            onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
-            className="flex-1"
-          />
-          <div className="relative z-50 pr-2">
-            <MagneticButton
+        {variant === "hero" ? (
+          <div className="rounded-2xl bg-canvas p-6 shadow-card">
+            <HeroTabsRow activeTab={heroTab} onSelect={selectHeroTab} className="mb-5" />
+
+            <button
+              type="button"
+              onClick={() => setDesktopStep(desktopStep === "where" ? null : "where")}
+              className={clsx(
+                "flex h-14 w-full items-center gap-3 rounded-lg border-2 px-4 text-left transition-colors",
+                desktopStep === "where" ? "border-ink" : "border-hairline hover:border-ink",
+              )}
+            >
+              <SearchIcon className="h-5 w-5 shrink-0 text-muted" />
+              <span className="truncate text-base text-ink">
+                {destination || <span className="text-muted">Search destinations</span>}
+              </span>
+            </button>
+
+            <div className="mt-3 flex items-stretch rounded-lg border border-hairline">
+              <button
+                type="button"
+                onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
+                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+              >
+                <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+                <span>
+                  <span className="block text-xs text-muted">Check-in</span>
+                  <span className="block text-sm font-semibold text-ink">{checkInLabel}</span>
+                </span>
+              </button>
+              <span className="w-px shrink-0 bg-hairline" />
+              <button
+                type="button"
+                onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
+                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+              >
+                <CalendarIcon className="h-5 w-5 shrink-0 text-muted" />
+                <span>
+                  <span className="block text-xs text-muted">Check-out</span>
+                  <span className="block text-sm font-semibold text-ink">{checkOutLabel}</span>
+                </span>
+              </button>
+              <span className="w-px shrink-0 bg-hairline" />
+              <button
+                type="button"
+                onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
+                className="flex flex-1 items-center gap-2.5 px-4 py-3 text-left hover:bg-surface-soft"
+              >
+                <PersonIcon className="h-5 w-5 shrink-0 text-muted" />
+                <span>
+                  <span className="block text-xs text-muted">Guests</span>
+                  <span className="block truncate text-sm font-semibold text-ink">
+                    {guests.adults > 1 || guests.children || guests.infants || guests.pets
+                      ? guestLabel
+                      : "Add guests"}
+                  </span>
+                </span>
+              </button>
+            </div>
+
+            <label className="mt-4 flex items-center gap-2 text-sm text-ink">
+              <input
+                type="checkbox"
+                checked={entirePlaceOnly}
+                onChange={(e) => setEntirePlaceOnly(e.target.checked)}
+                className="h-4 w-4 rounded-sm border-hairline accent-primary"
+              />
+              Show me only entire homes and apartments
+            </label>
+
+            <button
               type="button"
               onClick={goToSearch}
-              aria-label="Search"
-              range={40}
-              strength={0.3}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary hover:bg-primary-active"
+              className="mt-5 w-full rounded-full bg-primary py-4 text-base font-bold uppercase tracking-wide text-on-primary transition-transform duration-150 hover:bg-primary-active active:scale-[0.98]"
             >
-              <SearchIcon className="h-5 w-5" />
-            </MagneticButton>
+              Search
+            </button>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center rounded-full border border-hairline bg-canvas shadow-card">
+            <DesktopSegment
+              label="Where"
+              value={destination || "Search destinations"}
+              active={desktopStep === "where"}
+              onClick={() => setDesktopStep(desktopStep === "where" ? null : "where")}
+              className="flex-1 border-r border-hairline"
+            />
+            <DesktopSegment
+              label="When"
+              value={dateLabel}
+              active={desktopStep === "when"}
+              onClick={() => setDesktopStep(desktopStep === "when" ? null : "when")}
+              className="flex-1 border-r border-hairline"
+            />
+            <DesktopSegment
+              label="Who"
+              value={
+                guests.adults > 1 || guests.children || guests.infants || guests.pets ? guestLabel : "Add guests"
+              }
+              active={desktopStep === "who"}
+              onClick={() => setDesktopStep(desktopStep === "who" ? null : "who")}
+              className="flex-1"
+            />
+            <div className="relative z-50 pr-2">
+              <MagneticButton
+                type="button"
+                onClick={goToSearch}
+                aria-label="Search"
+                range={40}
+                strength={0.3}
+                className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-primary text-on-primary hover:bg-primary-active"
+              >
+                <SearchIcon className="h-5 w-5" />
+              </MagneticButton>
+            </div>
+          </div>
+        )}
 
         {desktopStep ? (
           <>
@@ -320,6 +440,47 @@ function DesktopSegment({
       <span className="block text-xs font-semibold text-ink">{label}</span>
       <span className="block truncate text-sm text-muted">{value}</span>
     </button>
+  );
+}
+
+function HeroTabsRow({
+  activeTab,
+  onSelect,
+  className,
+}: {
+  activeTab: HeroTabKey;
+  onSelect: (tab: HeroTabKey) => void;
+  className?: string;
+}) {
+  return (
+    <div className={clsx("flex items-center gap-6 border-b border-hairline-soft", className)}>
+      {HERO_TABS.map((tab) =>
+        "comingSoon" in tab ? (
+          <span
+            key={tab.key}
+            title="Coming soon"
+            className="flex items-center gap-1 pb-3 text-sm font-semibold text-muted-soft"
+          >
+            {tab.label}
+            <span className="rounded-full border border-hairline px-1.5 py-0.5 text-[8px] font-bold uppercase tracking-wide text-muted">
+              New
+            </span>
+          </span>
+        ) : (
+          <button
+            key={tab.key}
+            type="button"
+            onClick={() => onSelect(tab.key)}
+            className={clsx(
+              "border-b-2 pb-3 text-sm font-semibold transition-colors",
+              activeTab === tab.key ? "border-primary text-primary" : "border-transparent text-muted hover:text-ink",
+            )}
+          >
+            {tab.label}
+          </button>
+        ),
+      )}
+    </div>
   );
 }
 
