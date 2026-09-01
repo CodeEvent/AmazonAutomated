@@ -31,6 +31,7 @@ function propertyFieldsFromForm(formData: FormData) {
     ratingAverage: formData.get("ratingAverage"),
     reviewCount: formData.get("reviewCount"),
     hostId: formData.get("hostId"),
+    houseRules: formData.get("houseRules"),
   };
 }
 
@@ -44,7 +45,7 @@ export async function createPropertyAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, ...data } = parsed.data;
+  const { pricePerNightDollars, houseRules, ...data } = parsed.data;
 
   const existing = await prisma.property.findUnique({ where: { slug: data.slug } });
   if (existing) {
@@ -52,7 +53,7 @@ export async function createPropertyAction(
   }
 
   const property = await prisma.property.create({
-    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100) },
+    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100), houseRules: houseRules ?? null },
   });
 
   revalidatePath("/admin/properties");
@@ -72,7 +73,7 @@ export async function updatePropertyAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, ...data } = parsed.data;
+  const { pricePerNightDollars, houseRules, ...data } = parsed.data;
 
   const existing = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!existing) {
@@ -87,7 +88,7 @@ export async function updatePropertyAction(
 
   await prisma.property.update({
     where: { id: propertyId },
-    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100) },
+    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100), houseRules: houseRules ?? null },
   });
 
   revalidatePath("/admin/properties");

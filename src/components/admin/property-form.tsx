@@ -173,6 +173,18 @@ export function PropertyForm({
         </Field>
       </Section>
 
+      <Section title="Policies">
+        <Field label="House rules (optional)" full>
+          <textarea
+            name="houseRules"
+            defaultValue={property?.houseRules ?? ""}
+            rows={4}
+            placeholder={"Check-in: 3:00 PM – 10:00 PM\nCheck-out: by 11:00 AM\nNo smoking\nNo parties or events"}
+            className={inputClass}
+          />
+        </Field>
+      </Section>
+
       <Section title="Display stats">
         <Field label="Rating average (0-5)">
           <input

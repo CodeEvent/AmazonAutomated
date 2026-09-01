@@ -98,6 +98,7 @@ model Property {
   amenities    String[]
   unavailableAmenities String[] @default([])
   images       String[]
+  houseRules   String?  @db.Text
 
   ratingAverage Float @default(0)
   reviewCount   Int   @default(0)

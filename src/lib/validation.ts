@@ -80,6 +80,10 @@ export const adminPropertySchema = z.object({
   ratingAverage: z.coerce.number().min(0).max(5).default(0),
   reviewCount: z.coerce.number().int().min(0).default(0),
   hostId: z.string().min(1, "Choose a host"),
+  houseRules: z.preprocess(
+    (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+    z.string().trim().max(4000).optional(),
+  ),
 });
 
 export const adminRoomTypeSchema = z.object({
