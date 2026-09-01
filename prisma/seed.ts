@@ -319,6 +319,7 @@ const properties: Array<{
   ratingAverage: number;
   reviewCount: number;
   hostSlug: string;
+  houseRules?: string;
 }> = [
   {
     slug: "sunset-loft-lisbon",
@@ -365,6 +366,8 @@ const properties: Array<{
     ratingAverage: 4.72,
     reviewCount: 98,
     hostSlug: "hotel-ribeira",
+    houseRules:
+      "Check-in: 3:00 PM – 10:00 PM\nCheck-out: by 11:00 AM\nNo smoking\nNo parties or events\nQuiet hours: 10:00 PM – 8:00 AM",
   },
   {
     slug: "kyoto-machiya-house",

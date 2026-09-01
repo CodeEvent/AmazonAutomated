@@ -8,11 +8,16 @@ import { HostCard } from "@/components/property/host-card";
 import { AmenitiesSection } from "@/components/property/amenities-section";
 import { ReviewsSection } from "@/components/property/reviews-section";
 import { PropertyHighlights } from "@/components/property/property-highlights";
+import { HouseRulesSection } from "@/components/property/house-rules-section";
+import { FAQSection } from "@/components/property/faq-section";
+import { MapSection } from "@/components/property/map-section";
+import { DestinationTiles } from "@/components/home/destination-tiles";
 import { ExpandableText } from "@/components/ui/expandable-text";
 import { isRareFind } from "@/lib/badges";
 import { hasLongStayDiscount } from "@/lib/pricing";
 import { getPropertyHighlights } from "@/lib/property-highlights";
 import { getOtherListingsByHost, getHostReviews } from "@/lib/host-profile";
+import { getDestinationTiles } from "@/lib/trending-destinations";
 
 type PropertyPageProps = {
   params: Promise<{ slug: string }>;
@@ -40,13 +45,14 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     notFound();
   }
 
-  const [propertyBookings, otherListings, hostReviews] = await Promise.all([
+  const [propertyBookings, otherListings, hostReviews, destinations] = await Promise.all([
     prisma.booking.findMany({
       where: { property: { id: property.id }, status: "CONFIRMED" },
       select: { roomTypeId: true, checkIn: true, checkOut: true },
     }),
     getOtherListingsByHost(property.hostId, property.id),
     getHostReviews(property.hostId),
+    getDestinationTiles(8),
   ]);
   const guests = parseGuestsFromParams(query);
   const rareFind = isRareFind(property.ratingAverage, property.reviewCount);
@@ -136,6 +142,15 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
 
       <AmenitiesSection amenities={property.amenities} unavailableAmenities={property.unavailableAmenities} />
 
+      <HouseRulesSection houseRules={property.houseRules} />
+
+      <FAQSection
+        hasBreakfastOption={property.roomTypes.some((rt) => rt.breakfastPricePerNight != null)}
+        freeCancellationCount={property.roomTypes.filter((rt) => rt.freeCancellation).length}
+        totalRoomTypes={property.roomTypes.length}
+        hasHouseRules={Boolean(property.houseRules)}
+      />
+
       <HostCard host={property.host} otherListings={otherListings} hostReviews={hostReviews} />
 
       <ReviewsSection
@@ -143,6 +158,18 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         ratingAverage={property.ratingAverage}
         reviewCount={property.reviewCount}
       />
+
+      <MapSection
+        latitude={property.latitude}
+        longitude={property.longitude}
+        address={property.address}
+        city={property.city}
+        country={property.country}
+      />
+
+      <div className="pt-8">
+        <DestinationTiles destinations={destinations} />
+      </div>
     </div>
   );
 }
