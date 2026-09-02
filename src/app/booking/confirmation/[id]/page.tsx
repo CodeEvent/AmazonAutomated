@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { SuccessCheck } from "@/components/motion/success-check";
 import { guestsSummaryLabel } from "@/lib/guests";
 import { CancelBookingButton } from "@/components/booking/cancel-booking-button";
+import { MessageThread } from "@/components/messages/message-thread";
+import { sendGuestMessageAction } from "@/lib/actions/message-actions";
 
 const PAYMENT_METHOD_LABELS: Record<string, string> = {
   card: "Credit or debit card",
@@ -28,7 +30,11 @@ export default async function BookingConfirmationPage({
 
   const booking = await prisma.booking.findUnique({
     where: { id },
-    include: { property: true, roomType: true },
+    include: {
+      property: true,
+      roomType: true,
+      messages: { orderBy: { createdAt: "asc" } },
+    },
   });
 
   if (!booking || booking.userId !== session.user.id) {
@@ -173,15 +179,25 @@ export default async function BookingConfirmationPage({
             </p>
             <div className="mt-4 flex flex-wrap gap-3">
               {canCancel ? <CancelBookingButton bookingId={booking.id} /> : null}
-              <Link
-                href={`/property/${booking.property.slug}#availability`}
-                className="rounded-lg border border-hairline px-4 py-2 text-sm font-semibold text-ink hover:bg-surface-soft"
-              >
-                Contact host
-              </Link>
             </div>
           </>
         )}
+      </div>
+
+      <div className="mt-6 rounded-md border border-hairline-soft p-6 text-left">
+        <h2 className="text-base font-semibold text-ink">Messages</h2>
+        <p className="mt-1 text-sm text-muted">
+          Message your host about this booking — replies come from {booking.property.name}&apos;s contact
+          point.
+        </p>
+        <div className="mt-4">
+          <MessageThread
+            messages={booking.messages}
+            viewerRole="GUEST"
+            action={sendGuestMessageAction.bind(null, booking.id)}
+            placeholder="Ask about check-in, directions, anything…"
+          />
+        </div>
       </div>
 
       <div className="mt-8 flex justify-center gap-3">

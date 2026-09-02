@@ -244,12 +244,37 @@ model Booking {
   property Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
   roomType RoomType @relation(fields: [roomTypeId], references: [id], onDelete: Restrict)
 
+  messages Message[]
+
   createdAt DateTime @default(now())
 
   @@index([userId])
   @@index([propertyId])
   @@index([roomTypeId])
   @@index([promoCodeId])
+}
+
+enum MessageSender {
+  GUEST
+  ADMIN
+}
+
+/**
+ * Real, ongoing guest<->admin conversation about a booking (admin stands in
+ * as the property's contact point — Wayfarer has no separate host login).
+ * Distinct from Booking.guestMessage, which stays as the one-shot note left
+ * at checkout time.
+ */
+model Message {
+  id        String        @id @default(cuid())
+  bookingId String
+  booking   Booking       @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  sender    MessageSender
+  body      String        @db.Text
+
+  createdAt DateTime @default(now())
+
+  @@index([bookingId])
 }
 
 enum PromoDiscountType {
