@@ -32,6 +32,9 @@ function propertyFieldsFromForm(formData: FormData) {
     reviewCount: formData.get("reviewCount"),
     hostId: formData.get("hostId"),
     houseRules: formData.get("houseRules"),
+    checkInFrom: formData.get("checkInFrom"),
+    checkInUntil: formData.get("checkInUntil"),
+    checkOutBy: formData.get("checkOutBy"),
   };
 }
 
@@ -45,7 +48,7 @@ export async function createPropertyAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, houseRules, ...data } = parsed.data;
+  const { pricePerNightDollars, houseRules, checkInFrom, checkInUntil, checkOutBy, ...data } = parsed.data;
 
   const existing = await prisma.property.findUnique({ where: { slug: data.slug } });
   if (existing) {
@@ -53,7 +56,14 @@ export async function createPropertyAction(
   }
 
   const property = await prisma.property.create({
-    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100), houseRules: houseRules ?? null },
+    data: {
+      ...data,
+      pricePerNight: Math.round(pricePerNightDollars * 100),
+      houseRules: houseRules ?? null,
+      checkInFrom: checkInFrom ?? null,
+      checkInUntil: checkInUntil ?? null,
+      checkOutBy: checkOutBy ?? null,
+    },
   });
 
   revalidatePath("/admin/properties");
@@ -73,7 +83,7 @@ export async function updatePropertyAction(
   if (!parsed.success) {
     return { error: parsed.error.issues[0]?.message ?? "Invalid input" };
   }
-  const { pricePerNightDollars, houseRules, ...data } = parsed.data;
+  const { pricePerNightDollars, houseRules, checkInFrom, checkInUntil, checkOutBy, ...data } = parsed.data;
 
   const existing = await prisma.property.findUnique({ where: { id: propertyId } });
   if (!existing) {
@@ -88,7 +98,14 @@ export async function updatePropertyAction(
 
   await prisma.property.update({
     where: { id: propertyId },
-    data: { ...data, pricePerNight: Math.round(pricePerNightDollars * 100), houseRules: houseRules ?? null },
+    data: {
+      ...data,
+      pricePerNight: Math.round(pricePerNightDollars * 100),
+      houseRules: houseRules ?? null,
+      checkInFrom: checkInFrom ?? null,
+      checkInUntil: checkInUntil ?? null,
+      checkOutBy: checkOutBy ?? null,
+    },
   });
 
   revalidatePath("/admin/properties");
@@ -133,6 +150,7 @@ function roomTypeFieldsFromForm(formData: FormData) {
     freeCancellation: formData.get("freeCancellation"),
     images: formData.get("images"),
     breakfastPricePerNightDollars: formData.get("breakfastPricePerNightDollars"),
+    turnoverBufferHours: formData.get("turnoverBufferHours"),
   };
 }
 

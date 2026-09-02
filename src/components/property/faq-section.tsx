@@ -1,13 +1,21 @@
+import { formatTimeOfDay } from "@/lib/format";
+
 export function FAQSection({
   hasBreakfastOption,
   freeCancellationCount,
   totalRoomTypes,
   hasHouseRules,
+  checkInFrom,
+  checkInUntil,
+  checkOutBy,
 }: {
   hasBreakfastOption: boolean;
   freeCancellationCount: number;
   totalRoomTypes: number;
   hasHouseRules: boolean;
+  checkInFrom: string | null;
+  checkInUntil: string | null;
+  checkOutBy: string | null;
 }) {
   const cancellationAnswer =
     totalRoomTypes === 0
@@ -17,6 +25,20 @@ export function FAQSection({
         : freeCancellationCount === 0
           ? "Room types at this property are non-refundable once booked."
           : `${freeCancellationCount} of ${totalRoomTypes} room type${totalRoomTypes === 1 ? "" : "s"} offer free cancellation before check-in — the exact policy for your pick is shown before you book.`;
+
+  const checkInPart =
+    checkInFrom && checkInUntil
+      ? `Check-in is between ${formatTimeOfDay(checkInFrom)} and ${formatTimeOfDay(checkInUntil)}.`
+      : checkInFrom
+        ? `Check-in is from ${formatTimeOfDay(checkInFrom)}.`
+        : null;
+  const checkOutPart = checkOutBy ? `Check-out is by ${formatTimeOfDay(checkOutBy)}.` : null;
+  const checkInOutAnswer =
+    checkInPart || checkOutPart
+      ? [checkInPart, checkOutPart].filter(Boolean).join(" ")
+      : hasHouseRules
+        ? "See House rules above for this property's check-in and check-out windows."
+        : "This host hasn't listed specific check-in/check-out times yet — you can confirm details with them after booking.";
 
   const faqs = [
     {
@@ -35,9 +57,7 @@ export function FAQSection({
     },
     {
       q: "What time is check-in and check-out?",
-      a: hasHouseRules
-        ? "See House rules above for this property's check-in and check-out windows."
-        : "This host hasn't listed specific check-in/check-out times yet — you can confirm details with them after booking.",
+      a: checkInOutAnswer,
     },
     {
       q: "Can I bring pets?",

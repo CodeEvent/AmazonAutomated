@@ -32,6 +32,15 @@ export const bookingSchema = z
     path: ["checkOut"],
   });
 
+/** Optional "HH:mm" 24-hour time input, blank -> undefined. */
+const optionalTime = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z
+    .string()
+    .regex(/^([01]\d|2[0-3]):[0-5]\d$/, "Use 24-hour HH:mm, e.g. 15:00")
+    .optional(),
+);
+
 /** Splits a comma-separated admin input into a trimmed, non-empty string list. */
 const commaList = z
   .string()
@@ -84,6 +93,9 @@ export const adminPropertySchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.string().trim().max(4000).optional(),
   ),
+  checkInFrom: optionalTime,
+  checkInUntil: optionalTime,
+  checkOutBy: optionalTime,
 });
 
 export const adminRoomTypeSchema = z.object({
@@ -104,6 +116,7 @@ export const adminRoomTypeSchema = z.object({
     (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
     z.coerce.number().positive().optional(),
   ),
+  turnoverBufferHours: z.coerce.number().int().min(0).max(72).default(0),
 });
 
 export const adminBlockedDateSchema = z

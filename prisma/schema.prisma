@@ -100,6 +100,12 @@ model Property {
   images       String[]
   houseRules   String?  @db.Text
 
+  // Structured check-in/out windows ("HH:mm", 24h). Null means the host
+  // hasn't set specific times yet — shown as flexible/TBD to guests.
+  checkInFrom  String?
+  checkInUntil String?
+  checkOutBy   String?
+
   ratingAverage Float @default(0)
   reviewCount   Int   @default(0)
 
@@ -138,6 +144,11 @@ model RoomType {
   // how it's offered at checkout: "Add breakfast for $X" for all guests).
   // Null means this room type doesn't offer a breakfast upgrade.
   breakfastPricePerNight Int?
+
+  // Minimum real gap required, after one booking's checkout, before the next
+  // booking's check-in is allowed for this room type (cleaning/turnaround).
+  // Enforced in availability.ts, not decorative. 0 = same-day turnover fine.
+  turnoverBufferHours Int @default(0)
 
   bookings     Booking[]
   blockedDates BlockedDate[]

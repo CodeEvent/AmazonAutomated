@@ -13,25 +13,38 @@ export type RoomTypeAvailability = RoomType & {
  * How many of a room type's units are unavailable for a date range — real
  * confirmed bookings plus admin-managed blocked-date ranges (maintenance,
  * owner use, etc.), which count against quantity exactly like a booking.
+ *
+ * A booking's occupied window is extended past its checkout by the room
+ * type's turnoverBufferHours (cleaning/prep time), so a new stay can't check
+ * in until that gap has passed — a real scheduling constraint, not cosmetic.
+ * Blocks aren't extended: the admin already chose their exact range.
  */
-async function countOccupiedUnits(roomTypeId: string, checkIn: Date, checkOut: Date): Promise<number> {
-  const [bookedCount, blockedCount] = await Promise.all([
-    prisma.booking.count({
-      where: {
-        roomTypeId,
-        status: "CONFIRMED",
-        checkIn: { lt: checkOut },
-        checkOut: { gt: checkIn },
-      },
+async function countOccupiedUnits(
+  roomTypeId: string,
+  checkIn: Date,
+  checkOut: Date,
+  turnoverBufferHours: number,
+): Promise<number> {
+  const bufferMs = turnoverBufferHours * 60 * 60 * 1000;
+
+  const [bookings, blocks] = await Promise.all([
+    prisma.booking.findMany({
+      where: { roomTypeId, status: "CONFIRMED" },
+      select: { checkIn: true, checkOut: true },
     }),
-    prisma.blockedDate.count({
-      where: {
-        roomTypeId,
-        startDate: { lt: checkOut },
-        endDate: { gt: checkIn },
-      },
+    prisma.blockedDate.findMany({
+      where: { roomTypeId },
+      select: { startDate: true, endDate: true },
     }),
   ]);
+
+  const bookedCount = bookings.filter((booking) => {
+    const effectiveCheckOut = bufferMs > 0 ? new Date(booking.checkOut.getTime() + bufferMs) : booking.checkOut;
+    return booking.checkIn < checkOut && effectiveCheckOut > checkIn;
+  }).length;
+
+  const blockedCount = blocks.filter((block) => block.startDate < checkOut && block.endDate > checkIn).length;
+
   return bookedCount + blockedCount;
 }
 
@@ -61,7 +74,7 @@ export async function getRoomTypesWithAvailability(
 
   return Promise.all(
     roomTypes.map(async (roomType) => {
-      const bookedCount = await countOccupiedUnits(roomType.id, checkIn, checkOut);
+      const bookedCount = await countOccupiedUnits(roomType.id, checkIn, checkOut, roomType.turnoverBufferHours);
       const remaining = roomType.quantity - bookedCount;
       return { ...roomType, bookedCount, remaining, available: remaining > 0 };
     }),
@@ -75,7 +88,7 @@ export async function isRoomTypeAvailable(
 ): Promise<boolean> {
   const roomType = await prisma.roomType.findUnique({ where: { id: roomTypeId } });
   if (!roomType) return false;
-  const occupiedCount = await countOccupiedUnits(roomTypeId, checkIn, checkOut);
+  const occupiedCount = await countOccupiedUnits(roomTypeId, checkIn, checkOut, roomType.turnoverBufferHours);
   return occupiedCount < roomType.quantity;
 }
 

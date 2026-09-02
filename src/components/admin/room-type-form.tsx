@@ -77,6 +77,16 @@ export function RoomTypeForm({
             className={inputClass}
           />
         </Field>
+        <Field label="Turnover buffer — hours after checkout before next check-in">
+          <input
+            name="turnoverBufferHours"
+            type="number"
+            min={0}
+            max={72}
+            defaultValue={roomType?.turnoverBufferHours ?? 0}
+            className={inputClass}
+          />
+        </Field>
         <Field label="Amenities (comma-separated)" full>
           <input
             name="amenities"

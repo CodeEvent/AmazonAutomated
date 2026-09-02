@@ -39,7 +39,7 @@ export default async function RoomTypeCalendarPage({
     const month = monthDate.getMonth();
     return {
       label: format(monthDate, "MMMM yyyy"),
-      days: buildCalendarMonth(year, month, roomType.quantity, bookings, blockedDates),
+      days: buildCalendarMonth(year, month, roomType.quantity, bookings, blockedDates, roomType.turnoverBufferHours),
       leadingOffset: leadingOffset(year, month),
     };
   });

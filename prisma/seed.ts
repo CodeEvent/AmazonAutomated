@@ -18,6 +18,7 @@ type RoomTypeSeed = {
   amenities: string[];
   freeCancellation: boolean;
   breakfastPricePerNight?: number;
+  turnoverBufferHours?: number;
 };
 
 /**
@@ -37,6 +38,7 @@ const roomTypeOverrides: Record<string, RoomTypeSeed[]> = {
       amenities: ["City view", "Air conditioning", "Free WiFi"],
       freeCancellation: true,
       breakfastPricePerNight: 2500,
+      turnoverBufferHours: 4,
     },
     {
       name: "Harbor View Suite",
@@ -320,6 +322,9 @@ const properties: Array<{
   reviewCount: number;
   hostSlug: string;
   houseRules?: string;
+  checkInFrom?: string;
+  checkInUntil?: string;
+  checkOutBy?: string;
 }> = [
   {
     slug: "sunset-loft-lisbon",
@@ -368,6 +373,9 @@ const properties: Array<{
     hostSlug: "hotel-ribeira",
     houseRules:
       "Check-in: 3:00 PM – 10:00 PM\nCheck-out: by 11:00 AM\nNo smoking\nNo parties or events\nQuiet hours: 10:00 PM – 8:00 AM",
+    checkInFrom: "15:00",
+    checkInUntil: "22:00",
+    checkOutBy: "11:00",
   },
   {
     slug: "kyoto-machiya-house",

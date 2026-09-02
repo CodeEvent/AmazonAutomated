@@ -59,11 +59,17 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
     getDestinationTiles(8),
   ]);
   // The availability table just needs "who occupies which dates" — admin-managed
-  // blocked ranges count against a room type's capacity exactly like a real
-  // booking, so they're merged into the same shape rather than modifying the
-  // (unchanged) AvailabilityTable component itself.
+  // blocked ranges, and each booking's real turnover-buffer gap after checkout,
+  // both count against a room type's capacity exactly like the actual booking,
+  // so they're merged into the same shape rather than modifying the (unchanged)
+  // AvailabilityTable component itself.
+  const turnoverBufferByRoomType = new Map(property.roomTypes.map((rt) => [rt.id, rt.turnoverBufferHours]));
   const occupiedRanges = [
-    ...propertyBookings,
+    ...propertyBookings.map((b) => {
+      const bufferHours = turnoverBufferByRoomType.get(b.roomTypeId) ?? 0;
+      const checkOut = bufferHours > 0 ? new Date(b.checkOut.getTime() + bufferHours * 60 * 60 * 1000) : b.checkOut;
+      return { ...b, checkOut };
+    }),
     ...blockedDates.map((b) => ({ roomTypeId: b.roomTypeId, checkIn: b.startDate, checkOut: b.endDate })),
   ];
   const guests = parseGuestsFromParams(query);
@@ -161,6 +167,9 @@ export default async function PropertyDetailPage({ params, searchParams }: Prope
         freeCancellationCount={property.roomTypes.filter((rt) => rt.freeCancellation).length}
         totalRoomTypes={property.roomTypes.length}
         hasHouseRules={Boolean(property.houseRules)}
+        checkInFrom={property.checkInFrom}
+        checkInUntil={property.checkInUntil}
+        checkOutBy={property.checkOutBy}
       />
 
       <HostCard host={property.host} otherListings={otherListings} hostReviews={hostReviews} />

@@ -3,7 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { formatDateShort, formatPrice } from "@/lib/format";
+import { formatDateShort, formatPrice, formatTimeOfDay } from "@/lib/format";
 import { Button } from "@/components/ui/button";
 import { SuccessCheck } from "@/components/motion/success-check";
 import { guestsSummaryLabel } from "@/lib/guests";
@@ -38,6 +38,13 @@ export default async function BookingConfirmationPage({
   const isCancelled = booking.status === "CANCELLED";
   const canCancel = !isCancelled && booking.checkIn > new Date();
   const subtotal = booking.nightlyRate * booking.nights;
+  const { checkInFrom, checkInUntil, checkOutBy } = booking.property;
+  const checkInWindow = checkInFrom
+    ? checkInUntil
+      ? `${formatTimeOfDay(checkInFrom)} – ${formatTimeOfDay(checkInUntil)}`
+      : `From ${formatTimeOfDay(checkInFrom)}`
+    : null;
+  const checkOutWindow = checkOutBy ? `By ${formatTimeOfDay(checkOutBy)}` : null;
 
   return (
     <div className="mx-auto max-w-[640px] px-4 py-16 text-center sm:px-8">
@@ -85,6 +92,18 @@ export default async function BookingConfirmationPage({
             {formatDateShort(booking.checkIn)} – {formatDateShort(booking.checkOut)}
           </span>
         </div>
+        {checkInWindow ? (
+          <div className="mt-2 flex justify-between text-sm text-ink">
+            <span>Check-in</span>
+            <span>{checkInWindow}</span>
+          </div>
+        ) : null}
+        {checkOutWindow ? (
+          <div className="mt-2 flex justify-between text-sm text-ink">
+            <span>Check-out</span>
+            <span>{checkOutWindow}</span>
+          </div>
+        ) : null}
         <div className="mt-2 flex justify-between text-sm text-ink">
           <span>Guests</span>
           <span>{guestsSummaryLabel(booking)}</span>

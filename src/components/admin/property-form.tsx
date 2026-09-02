@@ -173,6 +173,36 @@ export function PropertyForm({
         </Field>
       </Section>
 
+      <Section title="Check-in / check-out">
+        <Field label="Check-in from (optional)">
+          <input
+            name="checkInFrom"
+            type="time"
+            defaultValue={property?.checkInFrom ?? ""}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Check-in until (optional)">
+          <input
+            name="checkInUntil"
+            type="time"
+            defaultValue={property?.checkInUntil ?? ""}
+            className={inputClass}
+          />
+        </Field>
+        <Field label="Check-out by (optional)">
+          <input
+            name="checkOutBy"
+            type="time"
+            defaultValue={property?.checkOutBy ?? ""}
+            className={inputClass}
+          />
+        </Field>
+        <p className="text-xs text-muted sm:col-span-2">
+          Shown to guests on the FAQ and booking confirmation. Leave blank if not set yet.
+        </p>
+      </Section>
+
       <Section title="Policies">
         <Field label="House rules (optional)" full>
           <textarea
